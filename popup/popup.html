@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Cinema Mode</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
+                </svg>
+                <span>Cinema Mode</span>
+            </div>
+            <div class="version">v1.0</div>
+        </header>
+
+        <main class="popup-content">
+            <section class="section">
+                <h3>How to Use</h3>
+                <div class="instruction">
+                    <div class="step">
+                        <span class="step-num">1</span>
+                        <span>Hover over any YouTube video thumbnail</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">2</span>
+                        <span>Press <kbd>H</kbd> to open cinema mode</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-num">3</span>
+                        <span>Press <kbd>ESC</kbd> to close</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h3>Settings</h3>
+                
+                <div class="setting-item">
+                    <label for="hotkey">Hotkey</label>
+                    <select id="hotkey">
+                        <option value="h">H</option>
+                        <option value="c">C</option>
+                        <option value="p">P</option>
+                        <option value="m">M</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label for="autoTheater">Auto Theater Mode</label>
+                    <input type="checkbox" id="autoTheater" checked>
+                </div>
+
+                <div class="setting-item">
+                    <label for="showIndicator">Show Hover Indicator</label>
+                    <input type="checkbox" id="showIndicator" checked>
+                </div>
+            </section>
+
+            <section class="section shortcuts">
+                <h3>Keyboard Shortcuts</h3>
+                <div class="shortcut-list">
+                    <div class="shortcut">
+                        <kbd>H</kbd>
+                        <span>Open cinema mode</span>
+                    </div>
+                    <div class="shortcut">
+                        <kbd>ESC</kbd>
+                        <span>Close overlay</span>
+                    </div>
+                    <div class="shortcut">
+                        <kbd>F</kbd>
+                        <span>Toggle fullscreen</span>
+                    </div>
+                    <div class="shortcut">
+                        <kbd>T</kbd>
+                        <span>Toggle theater mode</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="popup-footer">
+            <span>Made for better YouTube experience</span>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

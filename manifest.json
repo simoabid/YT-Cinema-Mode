@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Cinema Mode",
+  "version": "1.0.0",
+  "description": "Hover over any YouTube thumbnail and press 'H' to watch in a beautiful cinema overlay",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon128.png"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://youtube.com/*"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "css": [
+        "content/styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-cinema": {
+      "suggested_key": {
+        "default": "Alt+H"
+      },
+      "description": "Toggle cinema mode for hovered video"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "yt-cinema-mode@extension",
+      "strict_min_version": "109.0"
+    }
+  }
+}
