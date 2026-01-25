@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="icons/icon128.png" width="50" height="50"> 
+<img src="icons/icon128.png" width="60" height="60"> 
 
 # YouTube Cinema Mode
 
@@ -76,14 +76,15 @@ Instant loading with optimized performance
 </table>
 
 ## 📦 Installation
-
 <details open>
 <summary><b>📌 Installation Steps</b></summary>
 
-1. **Download or Clone** this repository
-   ```bash
-   git clone https://github.com/simoabid/YT-Cinema-Mode.git
-   ```
+1. **Choose an installation method:**
+   - **Option 1:** Download `YouTube-Cinema-Mode-Extension-v1.0.0.zip` from the [Releases](https://github.com/simoabid/YT-Cinema-Mode/releases) section and extract it.
+   - **Option 2:** Clone this repository
+     ```bash
+     git clone https://github.com/simoabid/YT-Cinema-Mode.git
+     ```
 
 2. **Open Chrome** and navigate to `chrome://extensions/`
 
@@ -91,7 +92,7 @@ Instant loading with optimized performance
 
 4. **Click "Load unpacked"**
 
-5. **Select** the `YouTube-Cinema-Mode-Extension` folder
+5. **Select** the `YouTube-Cinema-Mode-Extension-v1.0.0` folder or the `YT-Cinema-Mode` folder you cloned.
 
 6. **Done!** 🎉 The extension is now installed
 
