@@ -12,7 +12,7 @@
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=28&pause=1000&color=FF0000&center=true&vCenter=true&width=600&lines=Transform+Your+YouTube+Experience;Cinema+Mode+On+Any+Page;Hover+%26+Watch+Instantly!" alt="Typing SVG" />
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&weight=600&size=28&pause=1000&color=FF0000&center=true&vCenter=true&width=600&lines=Transform+Your+YouTube+Experience+🚀;Cinema+Mode+On+Any+Page+🎬;Hover+%26+Watch+Instantly+🎥!" alt="Typing SVG" />
 </p>
 
 **A beautiful Chrome extension that lets you watch any YouTube video in a stunning cinema-style overlay without leaving the current page.**
