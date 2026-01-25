@@ -1,6 +1,8 @@
 <div align="center">
 
-# <img src="icons/icon128.png" width="48" height="48"> YouTube Cinema Mode
+<img src="icons/icon128.png" width="50" height="50"> 
+
+# YouTube Cinema Mode
 
 ### 🎬 Watch YouTube Videos in Stunning Cinema-Style Overlay
 
