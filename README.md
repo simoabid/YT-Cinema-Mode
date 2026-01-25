@@ -208,7 +208,7 @@ MIT License - feel free to use this project for personal or commercial purposes
 
 <div align="center">
 
-**Made with ❤️ and ☕ by the YouTube Cinema Mode Team**
+**Made with ❤️ and ☕ by [ABID.Dev](https://github.com/simoabid/) 🇲🇦**
 
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/simoabid)
 
