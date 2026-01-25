@@ -2,7 +2,7 @@
 
 <img src="icons/icon128.png" width="60" height="60"> 
 
-# YouTube Cinema Mode
+# YouTube Cinema Mode 📽️🎞️
 
 ### 🎬 Watch YouTube Videos in Stunning Cinema-Style Overlay
 
