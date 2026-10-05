@@ -20,11 +20,18 @@
 .yt-cinema-overlay.yt-cinema-visible {
     opacity: 1;
     visibility: visible;
-    background: rgba(0, 0, 0, 0.92);
-    backdrop-filter: blur(20px);
+    background: var(--yt-cinema-backdrop-bg, rgba(0, 0, 0, 0.90));
+    backdrop-filter: var(--yt-cinema-backdrop-blur, blur(20px));
+}
+
+.yt-cinema-overlay.yt-cinema-oled.yt-cinema-visible {
+    background: #000000 !important;
+    backdrop-filter: none !important;
 }
 
 .yt-cinema-container {
+    position: relative;
+    z-index: 2;
     width: auto;
     height: auto;
     max-width: 85vw;
@@ -55,6 +62,7 @@
     background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .yt-cinema-title {
@@ -117,12 +125,26 @@
     color: #ff4444;
 }
 
+.yt-cinema-btn.yt-cinema-copied {
+    background: rgba(74, 222, 128, 0.2) !important;
+    color: #4ade80 !important;
+    transform: scale(1.1);
+}
+
+.yt-cinema-btn.yt-cinema-copied svg {
+    color: #4ade80;
+}
+
 /* Player Wrapper */
 .yt-cinema-player-wrapper {
     flex: 1;
+    min-height: 0;
     position: relative;
     background: #000;
     overflow: hidden;
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 .yt-cinema-loader {
@@ -138,6 +160,7 @@
     font-family: 'Roboto', Arial, sans-serif;
     font-size: 14px;
     z-index: 10;
+    display: none !important;
 }
 
 .yt-cinema-spinner {
@@ -157,8 +180,10 @@
     width: 100%;
     height: 100%;
     border: none;
+    display: block;
     opacity: 0;
     transition: opacity 0.3s ease;
+    opacity: 1;
 }
 
 .yt-cinema-iframe-loaded {
@@ -174,6 +199,7 @@
     background: linear-gradient(0deg, rgba(255,255,255,0.03) 0%, transparent 100%);
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     flex-shrink: 0;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .yt-cinema-hint {
@@ -327,9 +353,864 @@
     }
 }
 
-/* Glass effect enhancement */
-@supports (backdrop-filter: blur(20px)) {
-    .yt-cinema-overlay.yt-cinema-visible {
-        background: rgba(0, 0, 0, 0.85);
+/* Ambient Lighting Aura & Full Screen Diffusion */
+.yt-cinema-ambient-layer {
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease, width 0.3s ease, height 0.3s ease;
+}
+
+.yt-cinema-visible .yt-cinema-ambient-layer {
+    opacity: 1;
+}
+
+/* Full Screen Glow - Atmospheric Viewport-Wide Diffusion */
+.yt-cinema-ambient-layer.yt-cinema-ambient-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    overflow: hidden;
+}
+
+.yt-cinema-ambient-canvas {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 28px;
+    filter: blur(var(--yt-cinema-ambient-blur, 80px)) saturate(160%) brightness(var(--yt-cinema-ambient-brightness, 110%));
+    transform: scale(var(--yt-cinema-ambient-scale, 1.12));
+    opacity: var(--yt-cinema-ambient-opacity, 0.75);
+    pointer-events: none;
+    transition: opacity 0.4s ease, filter 0.3s ease, transform 0.3s ease;
+}
+
+.yt-cinema-ambient-layer.yt-cinema-ambient-fullscreen .yt-cinema-ambient-canvas {
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+    transform: scale(var(--yt-cinema-ambient-fs-scale, 1.35));
+    filter: blur(var(--yt-cinema-ambient-fs-blur, 110px)) saturate(180%) brightness(var(--yt-cinema-ambient-brightness, 115%));
+}
+
+.yt-cinema-ambient-fallback {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 28px;
+    background: radial-gradient(circle at center, rgba(255, 0, 0, 0.25) 0%, rgba(200, 0, 30, 0.15) 50%, transparent 80%);
+    filter: blur(var(--yt-cinema-ambient-blur, 60px));
+    transform: scale(var(--yt-cinema-ambient-scale, 1.12));
+    animation: yt-cinema-ambient-pulse 4s ease-in-out infinite alternate;
+    opacity: var(--yt-cinema-ambient-opacity, 0.75);
+    pointer-events: none;
+    transition: opacity 0.4s ease, filter 0.3s ease, transform 0.3s ease;
+}
+
+.yt-cinema-ambient-layer.yt-cinema-ambient-fullscreen .yt-cinema-ambient-fallback {
+    border-radius: 0;
+    transform: scale(var(--yt-cinema-ambient-fs-scale, 1.3));
+    filter: blur(var(--yt-cinema-ambient-fs-blur, 100px));
+}
+
+@keyframes yt-cinema-ambient-pulse {
+    0% {
+        opacity: calc(var(--yt-cinema-ambient-opacity, 0.75) * 0.6);
+        transform: scale(calc(var(--yt-cinema-ambient-scale, 1.12) * 0.96));
     }
+    100% {
+        opacity: var(--yt-cinema-ambient-opacity, 0.75);
+        transform: scale(calc(var(--yt-cinema-ambient-scale, 1.12) * 1.04));
+    }
+}
+
+/* Hide ambient layer only when container alone is fullscreened */
+.yt-cinema-container:fullscreen ~ .yt-cinema-ambient-layer {
+    display: none !important;
+}
+
+/* Docked / Floating Mini-Player Mode (Draggable, Resizable & Freely Positionable) */
+.yt-cinema-overlay.yt-cinema-docked {
+    pointer-events: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483640;
+}
+
+.yt-cinema-container.yt-cinema-docked {
+    pointer-events: auto !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: auto !important;
+    right: auto !important;
+    width: var(--yt-dock-w, 540px) !important;
+    height: var(--yt-dock-h, 340px) !important;
+    min-width: 360px !important;
+    min-height: 230px !important;
+    max-width: 92vw !important;
+    max-height: 88vh !important;
+    border-radius: 16px !important;
+    background: rgba(15, 15, 19, 0.95) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 24px 60px rgba(0, 0, 0, 0.85),
+        0 8px 24px rgba(0, 0, 0, 0.5) !important;
+    transform: translate3d(var(--yt-dock-x, 0px), var(--yt-dock-y, 0px), 0) !important;
+    will-change: transform, width, height;
+    transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.2s ease, width 0.2s ease, height 0.2s ease !important;
+    z-index: 2147483640;
+    margin: 0 !important;
+    container-type: inline-size;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-dragging {
+    transition: none !important;
+    box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.28),
+        0 32px 80px rgba(0, 0, 0, 0.95),
+        0 12px 32px rgba(0, 0, 0, 0.6) !important;
+    user-select: none !important;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-resizing {
+    transition: none !important;
+    box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.28),
+        0 28px 70px rgba(0, 0, 0, 0.92),
+        0 10px 28px rgba(0, 0, 0, 0.55) !important;
+    user-select: none !important;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-header {
+    padding: 8px 12px;
+    background: rgba(20, 20, 26, 0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: grab;
+    user-select: none;
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-dragging .yt-cinema-header {
+    cursor: grabbing;
+}
+
+/* Drag Grip icon in header */
+.yt-cinema-drag-grip {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    margin-right: 2px;
+    flex-shrink: 0;
+    cursor: grab;
+    transition: color 0.2s ease;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-drag-grip {
+    display: inline-flex;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-drag-grip:hover,
+.yt-cinema-container.yt-cinema-docked.yt-cinema-dragging .yt-cinema-drag-grip {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Drag & Resize Shield to block iframe pointer events during mouse interactions */
+.yt-cinema-drag-shield {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 999;
+    background: transparent;
+    cursor: grabbing;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-dragging .yt-cinema-drag-shield,
+.yt-cinema-container.yt-cinema-docked.yt-cinema-resizing .yt-cinema-drag-shield {
+    display: block;
+}
+
+/* Edge Snap Magnetic Feedback */
+.yt-cinema-container.yt-cinema-docked.yt-cinema-snap-edge {
+    box-shadow: 
+        0 0 0 1.5px rgba(255, 255, 255, 0.4),
+        0 0 20px rgba(255, 255, 255, 0.12),
+        0 24px 60px rgba(0, 0, 0, 0.9) !important;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-title {
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: none;
+    font-size: 13px;
+    gap: 8px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-title-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-controls {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    transform: none;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-speed-pill {
+    height: 28px;
+    min-width: 36px;
+    padding: 0 6px;
+    font-size: 11px;
+    border-radius: 6px;
+}
+
+/* In docked mode, hide secondary controls to prevent header crowding */
+.yt-cinema-container.yt-cinema-docked .yt-cinema-pip-btn,
+.yt-cinema-container.yt-cinema-docked .yt-cinema-newtab-btn {
+    display: none !important;
+}
+
+/* Hide copy link in docked mode unless window is sufficiently wide */
+.yt-cinema-container.yt-cinema-docked .yt-cinema-copy-btn {
+    display: none !important;
+}
+
+@container (min-width: 480px) {
+    .yt-cinema-container.yt-cinema-docked .yt-cinema-copy-btn {
+        display: flex !important;
+    }
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-close-btn:hover {
+    background: rgba(239, 68, 68, 0.28) !important;
+    color: #f87171 !important;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-dock-btn:hover {
+    background: rgba(56, 189, 248, 0.25) !important;
+    color: #38bdf8 !important;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-footer {
+    display: none;
+}
+
+.yt-cinema-overlay.yt-cinema-docked .yt-cinema-ambient-layer {
+    display: none !important;
+}
+
+/* Window Resize Handles (8 directions) */
+.yt-cinema-resize-handle {
+    position: absolute;
+    z-index: 1002;
+    touch-action: none;
+    user-select: none;
+    display: none;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-resize-handle {
+    display: block;
+}
+
+.yt-cinema-resize-n {
+    top: -5px;
+    left: 14px;
+    right: 14px;
+    height: 10px;
+    cursor: ns-resize;
+}
+
+.yt-cinema-resize-s {
+    bottom: -5px;
+    left: 14px;
+    right: 14px;
+    height: 10px;
+    cursor: ns-resize;
+}
+
+.yt-cinema-resize-w {
+    left: -5px;
+    top: 14px;
+    bottom: 14px;
+    width: 10px;
+    cursor: ew-resize;
+}
+
+.yt-cinema-resize-e {
+    right: -5px;
+    top: 14px;
+    bottom: 14px;
+    width: 10px;
+    cursor: ew-resize;
+}
+
+.yt-cinema-resize-nw {
+    top: -5px;
+    left: -5px;
+    width: 18px;
+    height: 18px;
+    cursor: nwse-resize;
+}
+
+.yt-cinema-resize-ne {
+    top: -5px;
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    cursor: nesw-resize;
+}
+
+.yt-cinema-resize-sw {
+    bottom: -5px;
+    left: -5px;
+    width: 18px;
+    height: 18px;
+    cursor: nesw-resize;
+}
+
+.yt-cinema-resize-se {
+    bottom: -5px;
+    right: -5px;
+    width: 22px;
+    height: 22px;
+    cursor: nwse-resize;
+}
+
+/* Corner Resize Grip (Visual indicator in bottom-right) */
+.yt-cinema-resize-grip {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 18px;
+    height: 18px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: nwse-resize;
+    z-index: 1003;
+    pointer-events: auto;
+    border-radius: 4px;
+    touch-action: none;
+    user-select: none;
+    transition: color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-resize-grip {
+    display: flex;
+}
+
+.yt-cinema-resize-grip:hover,
+.yt-cinema-container.yt-cinema-resizing .yt-cinema-resize-grip {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Vertical Shorts Cinema Mode */
+.yt-cinema-container.yt-cinema-shorts {
+    max-width: 480px !important;
+    min-width: 280px !important;
+    border-radius: 26px !important;
+    box-shadow: 
+        0 0 0 3px rgba(255, 255, 255, 0.12),
+        0 25px 60px rgba(0, 0, 0, 0.9),
+        0 0 80px rgba(255, 0, 0, 0.18) !important;
+}
+
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-header {
+    padding: 14px 18px;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-shorts {
+    width: var(--yt-dock-w, 300px) !important;
+    height: var(--yt-dock-h, 500px) !important;
+    min-width: 240px !important;
+    min-height: 380px !important;
+    border-radius: 18px !important;
+}
+
+.yt-cinema-shorts-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ff0000;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.yt-cinema-shorts-notch {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Action button variations */
+.yt-cinema-dock-btn:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    color: #60a5fa !important;
+}
+
+.yt-cinema-next-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+}
+
+.yt-cinema-screenshot-btn:hover {
+    background: rgba(14, 165, 233, 0.25) !important;
+    color: #38bdf8 !important;
+}
+
+/* Camera Shutter Flash Animation */
+.yt-cinema-shutter-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+    z-index: 25;
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.yt-cinema-shutter-flash.flashing {
+    opacity: 1;
+    transition: none;
+}
+
+/* Modern Floating HUD / Toast Notification */
+.yt-cinema-toast {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(18, 18, 18, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    pointer-events: none;
+    z-index: 30;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.yt-cinema-toast.yt-cinema-toast-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.yt-cinema-toast-icon {
+    display: inline-flex;
+    align-items: center;
+    color: #38bdf8;
+}
+
+.yt-cinema-toast-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* On-Screen Volume & Mute HUD */
+.yt-cinema-volume-hud {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px) scale(0.96);
+    background: rgba(18, 18, 22, 0.90);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 35;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    min-width: 170px;
+}
+
+.yt-cinema-volume-hud.yt-cinema-volume-hud-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.yt-cinema-volume-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #38bdf8;
+    flex-shrink: 0;
+}
+
+.yt-cinema-volume-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.yt-cinema-volume-hud.is-muted .yt-cinema-volume-icon {
+    color: #ef4444;
+}
+
+.yt-cinema-volume-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    min-width: 70px;
+}
+
+.yt-cinema-volume-fill {
+    height: 100%;
+    width: 100%;
+    background: #38bdf8;
+    border-radius: 2px;
+    transition: width 0.08s ease-out;
+}
+
+.yt-cinema-volume-hud.is-muted .yt-cinema-volume-fill {
+    background: #ef4444;
+}
+
+.yt-cinema-volume-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #f1f5f9;
+    min-width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Scaled Volume HUD inside floating mini-player */
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-hud {
+    top: 14px;
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 140px;
+    gap: 8px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-track {
+    min-width: 50px;
+    height: 3px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-text {
+    font-size: 11px;
+    min-width: 32px;
+}
+
+/* Immersive Auto-Hide Controls (True Cinema Mode) */
+.yt-cinema-container.yt-cinema-controls-hidden .yt-cinema-header {
+    opacity: 0 !important;
+    transform: translateY(-8px);
+    pointer-events: none !important;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.yt-cinema-container.yt-cinema-controls-hidden .yt-cinema-footer {
+    opacity: 0 !important;
+    transform: translateY(8px);
+    pointer-events: none !important;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.yt-cinema-container.yt-cinema-controls-hidden,
+.yt-cinema-container.yt-cinema-controls-hidden iframe {
+    cursor: none !important;
+}
+
+/* Playback Speed Selector & Dropdown Menu */
+.yt-cinema-speed-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.yt-cinema-speed-pill {
+    height: 36px;
+    min-width: 44px;
+    padding: 0 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: rgba(255, 255, 255, 0.88);
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yt-cinema-speed-pill:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: scale(1.04);
+}
+
+.yt-cinema-speed-pill.active,
+.yt-cinema-speed-pill:focus-visible {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    outline: none;
+}
+
+.yt-cinema-speed-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 110px;
+    background: rgba(20, 20, 20, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.2);
+    padding: 6px 0;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.96);
+    transform-origin: top right;
+    transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.18s;
+    max-height: 290px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.yt-cinema-speed-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.yt-cinema-speed-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.yt-cinema-speed-menu.yt-cinema-speed-menu-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.yt-cinema-speed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-speed-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.yt-cinema-speed-item.active {
+    color: #38bdf8;
+    font-weight: 700;
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.yt-cinema-speed-check {
+    width: 14px;
+    height: 14px;
+    display: none;
+    color: #38bdf8;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.yt-cinema-speed-item.active .yt-cinema-speed-check {
+    display: inline-block;
+}
+
+/* Standalone Page Toast (Direct PiP feedback) */
+.yt-cinema-page-toast {
+    position: fixed !important;
+    bottom: 28px !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(16px) !important;
+    background: rgba(18, 18, 22, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #ffffff !important;
+    padding: 10px 20px !important;
+    border-radius: 9999px !important;
+    font-family: 'Roboto', Arial, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.2px !important;
+    z-index: 2147483647 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    white-space: nowrap !important;
+    cursor: default !important;
+    user-select: none !important;
+    pointer-events: auto !important;
+}
+
+.yt-cinema-page-toast.yt-cinema-toast-visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateX(-50%) translateY(0) !important;
+}
+
+.yt-cinema-page-toast .yt-cinema-toast-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    color: #38bdf8 !important;
+    flex-shrink: 0 !important;
+}
+
+.yt-cinema-page-toast .yt-cinema-toast-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.yt-cinema-page-toast.clickable {
+    cursor: pointer !important;
+}
+
+.yt-cinema-page-toast.clickable:hover {
+    background: rgba(30, 30, 36, 0.98) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+}
+
+/* Direct Picture-in-Picture Floating Player Mode */
+.yt-cinema-container.yt-cinema-pip-mode {
+    border-color: rgba(56, 189, 248, 0.4) !important;
+    box-shadow: 
+        0 0 0 1px rgba(56, 189, 248, 0.25),
+        0 24px 60px rgba(0, 0, 0, 0.85),
+        0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.yt-cinema-container.yt-cinema-pip-mode .yt-cinema-pip-btn {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.16) !important;
 }

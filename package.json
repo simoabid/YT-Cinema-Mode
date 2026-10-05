@@ -1,0 +1,17 @@
+{
+  "name": "youtube-cinema-mode",
+  "version": "1.0.0",
+  "description": "Hover over any YouTube thumbnail and press 'H' to watch in a beautiful cinema overlay",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "keywords": [
+    "chrome-extension",
+    "firefox-addon",
+    "youtube",
+    "cinema-mode"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+

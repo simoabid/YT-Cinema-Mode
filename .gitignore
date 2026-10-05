@@ -1,2 +1,17 @@
+# Build and distribution output
+dist/
+
+# Dependencies
+node_modules/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor configurations
+.vscode/
+.idea/
+
+# Notes and drafts
 README.md-StandOut.txt
 OLD_README.md
