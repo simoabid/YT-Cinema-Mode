@@ -2996,12 +2996,14 @@
     });
 
     let hoverIndicator = null;
+    let hoverRafId = null;
+    let scrollRafId = null;
 
     function updateHoverIndicatorHotkey() {
         if (hoverIndicator) {
             const span = hoverIndicator.querySelector('span');
             if (span) {
-                const hk = formatKeyDisplay(settings.hotkey || 'h');
+                const hk = formatKeyDisplay(settings.hotkey || ' ');
                 if (settings.directPiP) {
                     span.innerHTML = `Press ${escapeHtml(hk)} for PiP`;
                 } else if (settings.directMiniPlayer) {
@@ -3011,6 +3013,16 @@
                 }
             }
         }
+    }
+
+    function updateHoverIndicatorPosition(element) {
+        if (!hoverIndicator || !element) return;
+        const anchor = element.closest('ytd-thumbnail, yt-thumbnail-view-model, [id="thumbnail"]') || element;
+        const rect = anchor.getBoundingClientRect();
+        const validRect = (rect.width > 0 && rect.height > 0) ? rect : element.getBoundingClientRect();
+        const x = Math.round(validRect.left + 8);
+        const y = Math.round(validRect.top + 8);
+        hoverIndicator.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     }
 
     function showHoverIndicator(element) {
@@ -3023,15 +3035,29 @@
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
                 <span></span>
             `;
+            hoverIndicator.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!currentTarget || !currentTarget.href) return;
+                const vidId = getVideoID(currentTarget.href);
+                if (vidId) {
+                    const title = getVideoTitle(currentTarget);
+                    const timestamp = getVideoTimestamp(currentTarget.href);
+                    if (settings.directPiP) {
+                        openDirectPictureInPicture(vidId, title, timestamp);
+                    } else {
+                        const aspectInfo = detectVideoAspectRatio(currentTarget);
+                        createOverlay(vidId, title, timestamp, aspectInfo.isVertical, aspectInfo.ratio);
+                    }
+                }
+            });
             updateHoverIndicatorHotkey();
             document.body.appendChild(hoverIndicator);
         } else {
             updateHoverIndicatorHotkey();
         }
 
-        const rect = element.getBoundingClientRect();
-        hoverIndicator.style.top = `${rect.top + window.scrollY + 8}px`;
-        hoverIndicator.style.left = `${rect.left + window.scrollX + 8}px`;
+        updateHoverIndicatorPosition(element);
         hoverIndicator.classList.add('yt-cinema-hover-visible');
     }
 
@@ -3068,34 +3094,35 @@
     // Prevent default browser actions for configured mouse triggers (e.g. Save As or autoscroll)
     document.addEventListener('mousedown', (e) => {
         if (activeModalOverlay) return;
-        if ((settings.altClickTrigger && e.altKey && e.button === 0) ||
-            (settings.middleClickTrigger && e.button === 1)) {
-            const link = findVideoLink(e.target);
-            if (link && link.href && getVideoID(link.href)) {
-                e.preventDefault();
-            }
+        const isAlt = settings.altClickTrigger && e.altKey && e.button === 0;
+        const isMiddle = settings.middleClickTrigger && e.button === 1;
+        if (!isAlt && !isMiddle) return;
+
+        const link = findVideoLink(e.target);
+        if (link && link.href && getVideoID(link.href)) {
+            e.preventDefault();
         }
     }, true);
 
     // Alt + Click trigger
     document.addEventListener('click', (e) => {
         if (activeModalOverlay) return;
-        if (settings.altClickTrigger && e.altKey && e.button === 0) {
-            const link = findVideoLink(e.target);
-            if (link && link.href) {
-                const vidId = getVideoID(link.href);
-                if (vidId) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    const title = getVideoTitle(link);
-                    const timestamp = getVideoTimestamp(link.href);
-                    if (settings.directPiP) {
-                        openDirectPictureInPicture(vidId, title, timestamp);
-                    } else {
-                        const aspectInfo = detectVideoAspectRatio(link);
-                        createOverlay(vidId, title, timestamp, aspectInfo.isVertical, aspectInfo.ratio);
-                    }
+        if (!settings.altClickTrigger || !e.altKey || e.button !== 0) return;
+
+        const link = findVideoLink(e.target);
+        if (link && link.href) {
+            const vidId = getVideoID(link.href);
+            if (vidId) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const title = getVideoTitle(link);
+                const timestamp = getVideoTimestamp(link.href);
+                if (settings.directPiP) {
+                    openDirectPictureInPicture(vidId, title, timestamp);
+                } else {
+                    const aspectInfo = detectVideoAspectRatio(link);
+                    createOverlay(vidId, title, timestamp, aspectInfo.isVertical, aspectInfo.ratio);
                 }
             }
         }
@@ -3104,59 +3131,171 @@
     // Middle-Click trigger
     document.addEventListener('auxclick', (e) => {
         if (activeModalOverlay) return;
-        if (settings.middleClickTrigger && e.button === 1) {
-            const link = findVideoLink(e.target);
-            if (link && link.href) {
-                const vidId = getVideoID(link.href);
-                if (vidId) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    const title = getVideoTitle(link);
-                    const timestamp = getVideoTimestamp(link.href);
-                    if (settings.directPiP) {
-                        openDirectPictureInPicture(vidId, title, timestamp);
-                    } else {
-                        const aspectInfo = detectVideoAspectRatio(link);
-                        createOverlay(vidId, title, timestamp, aspectInfo.isVertical, aspectInfo.ratio);
-                    }
+        if (!settings.middleClickTrigger || e.button !== 1) return;
+
+        const link = findVideoLink(e.target);
+        if (link && link.href) {
+            const vidId = getVideoID(link.href);
+            if (vidId) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                const title = getVideoTitle(link);
+                const timestamp = getVideoTimestamp(link.href);
+                if (settings.directPiP) {
+                    openDirectPictureInPicture(vidId, title, timestamp);
+                } else {
+                    const aspectInfo = detectVideoAspectRatio(link);
+                    createOverlay(vidId, title, timestamp, aspectInfo.isVertical, aspectInfo.ratio);
                 }
             }
         }
     }, true);
 
+    const CARD_CONTAINER_SELECTOR = 'ytd-rich-item-renderer, ytd-rich-grid-media, ytd-video-renderer, ' +
+        'ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-reel-item-renderer, ' +
+        'ytd-playlist-video-renderer, ytd-playlist-panel-video-renderer, yt-lockup-view-model';
+
+    function getVideoCard(element) {
+        if (!element || !element.closest) return null;
+        return element.closest(CARD_CONTAINER_SELECTOR) ||
+            element.closest('ytd-thumbnail, yt-thumbnail-view-model') ||
+            element.closest('a#thumbnail, a[href*="watch?v="], a[href*="shorts/"]');
+    }
+
+    let lastHoverEl = null;
+
+    function scheduleIndicator(link) {
+        if (hoverRafId) cancelAnimationFrame(hoverRafId);
+        hoverRafId = requestAnimationFrame(() => {
+            hoverRafId = null;
+            if (currentTarget === link) {
+                showHoverIndicator(link);
+            }
+        });
+    }
+
     document.addEventListener('mouseover', (e) => {
         if (activeModalOverlay) return;
-        const link = findVideoLink(e.target);
-        if (link) {
-            currentTarget = link;
-            showHoverIndicator(link);
+        const el = e.target;
+        if (!el || el === lastHoverEl) return;
+        lastHoverEl = el;
+
+        // If hovering over our hoverIndicator, keep it active
+        if (el === hoverIndicator || (hoverIndicator && hoverIndicator.contains(el))) {
+            return;
+        }
+
+        // If already tracking a target and cursor is still within the same video card, don't re-trigger
+        if (currentTarget) {
+            const currentCard = getVideoCard(currentTarget);
+            if (currentCard && currentCard.contains(el)) {
+                return;
+            }
+        }
+
+        if (!getVideoCard(el)) return;
+
+        const link = findVideoLink(el);
+        if (!link) return;
+
+        currentTarget = link; // Always track, ensuring hotkeys work even if indicator is disabled
+        if (settings.showIndicator) {
+            scheduleIndicator(link);
         }
     }, { passive: true });
 
     document.addEventListener('mouseout', (e) => {
         if (!currentTarget) return;
-        if (!currentTarget.contains(e.relatedTarget)) {
-            currentTarget = null;
-            hideHoverIndicator();
+        const rel = e.relatedTarget;
+
+        // 1. Moving into hover indicator or its children
+        if (rel && (rel === hoverIndicator || (hoverIndicator && hoverIndicator.contains(rel)))) {
+            return;
         }
+
+        // 2. Moving to another element within the same video card (e.g. preview player, badges)
+        const currentCard = getVideoCard(currentTarget);
+        if (rel && currentCard && currentCard.contains(rel)) {
+            return;
+        }
+
+        // 3. Moving to another link representing the same video ID
+        if (rel) {
+            const relLink = findVideoLink(rel);
+            if (relLink && relLink.href && currentTarget.href && getVideoID(relLink.href) === getVideoID(currentTarget.href)) {
+                currentTarget = relLink;
+                return;
+            }
+        }
+
+        // 4. If rel is null (DOM node mutated/replaced under cursor, e.g. YouTube preview activation)
+        if (!rel) {
+            if (e.clientX > 0 && e.clientY > 0 && e.clientX < window.innerWidth && e.clientY < window.innerHeight) {
+                const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
+                if (elAtPoint) {
+                    if (elAtPoint === hoverIndicator || (hoverIndicator && hoverIndicator.contains(elAtPoint))) {
+                        return;
+                    }
+                    if (currentCard && currentCard.contains(elAtPoint)) {
+                        return;
+                    }
+                    const pointLink = findVideoLink(elAtPoint);
+                    if (pointLink && pointLink.href && currentTarget.href && getVideoID(pointLink.href) === getVideoID(currentTarget.href)) {
+                        currentTarget = pointLink;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Truly left the video card
+        currentTarget = null;
+        lastHoverEl = null;
+        if (hoverRafId) {
+            cancelAnimationFrame(hoverRafId);
+            hoverRafId = null;
+        }
+        hideHoverIndicator();
     }, { passive: true });
 
+    let scrollDebounceTimer = null;
     window.addEventListener('scroll', () => {
-        if (currentTarget) {
-            if (!settings.showIndicator) {
+        if (!currentTarget) {
+            if (hoverIndicator && hoverIndicator.classList.contains('yt-cinema-hover-visible')) {
+                hideHoverIndicator();
+            }
+            return;
+        }
+
+        // Hide immediately during scroll motion to avoid floating detach
+        if (hoverIndicator && hoverIndicator.classList.contains('yt-cinema-hover-visible')) {
+            hoverIndicator.classList.remove('yt-cinema-hover-visible');
+        }
+
+        if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer);
+        scrollDebounceTimer = setTimeout(() => {
+            scrollDebounceTimer = null;
+            if (!currentTarget || !settings.showIndicator) {
                 hideHoverIndicator();
                 return;
             }
             const rect = currentTarget.getBoundingClientRect();
-            if (rect.bottom < 0 || rect.top > window.innerHeight) {
+            if (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth) {
                 hideHoverIndicator();
-            } else if (hoverIndicator && hoverIndicator.classList.contains('yt-cinema-hover-visible')) {
-                hoverIndicator.style.top = `${rect.top + window.scrollY + 8}px`;
-                hoverIndicator.style.left = `${rect.left + window.scrollX + 8}px`;
+            } else {
+                updateHoverIndicatorPosition(currentTarget);
+                hoverIndicator.classList.add('yt-cinema-hover-visible');
             }
-        }
+        }, 120);
     }, { passive: true });
 
-    console.log('[YouTube Cinema Mode] Extension loaded. Press hotkey or Alt+Click thumbnail to activate.');
+    window.addEventListener('yt-navigate-finish', () => {
+        currentTarget = null;
+        if (hoverRafId) {
+            cancelAnimationFrame(hoverRafId);
+            hoverRafId = null;
+        }
+        hideHoverIndicator();
+    });
 })();
