@@ -103,10 +103,19 @@
         targetOverlay.style.setProperty('--yt-cinema-ambient-fs-scale', fsScale);
         targetOverlay.style.setProperty('--yt-cinema-ambient-opacity', opacity);
 
-        const haloBlur = Math.round(30 + normalized * 70);
-        const fsBlur = Math.round(50 + normalized * 90);
-        targetOverlay.style.setProperty('--yt-cinema-ambient-blur', `${haloBlur}px`);
-        targetOverlay.style.setProperty('--yt-cinema-ambient-fs-blur', `${fsBlur}px`);
+        let blurVal = 80;
+        if (settings.ambientBlur !== undefined) {
+            blurVal = parseInt(settings.ambientBlur, 10);
+            if (isNaN(blurVal)) blurVal = 80;
+        } else if (settings.ambientQuality === 'medium') {
+            blurVal = 40;
+        } else if (settings.ambientQuality === 'low') {
+            blurVal = 0;
+        }
+
+        const fsBlurVal = blurVal > 0 ? Math.round(blurVal * 1.25) : 0;
+        targetOverlay.style.setProperty('--yt-cinema-ambient-blur', `${blurVal}px`);
+        targetOverlay.style.setProperty('--yt-cinema-ambient-fs-blur', `${fsBlurVal}px`);
     }
 
     function applyBackdropSettings(targetOverlay = activeModalOverlay) {
@@ -474,6 +483,16 @@
 
     function applySettings(cinemaSettings) {
         if (!cinemaSettings) return;
+        if (cinemaSettings.hotkey === 'h' && cinemaSettings.directMiniPlayer === true) {
+            cinemaSettings = {
+                ...cinemaSettings,
+                hotkey: ' ',
+                autoHideControls: true,
+                rememberSpeed: true,
+                directMiniPlayer: false,
+                directPiP: false
+            };
+        }
 
         const prevShowIndicator = settings.showIndicator;
         const prevHotkey = settings.hotkey;
@@ -2991,7 +3010,7 @@
     }
 
     function formatKeyDisplay(key) {
-        if (!key) return 'H';
+        if (!key) return 'Space';
         if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
         if (key.length === 1) return key.toUpperCase();
         return key.charAt(0).toUpperCase() + key.slice(1);

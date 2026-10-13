@@ -132,25 +132,37 @@ api.runtime.onInstalled.addListener(async (details) => {
     setupWebRequestListeners();
     if (details.reason === 'install') {
         try {
+            const defaultSettings = {
+                hotkey: ' ',
+                autoTheater: true,
+                showIndicator: true,
+                backdropStyle: 'glass',
+                overlayOpacity: 90,
+                ambientLighting: true,
+                ambientFullScreen: true,
+                ambientGlow: 75,
+                ambientQuality: 'high',
+                ambientBlur: 80,
+                autoPause: true,
+                altClickTrigger: true,
+                middleClickTrigger: false,
+                autoHideControls: true,
+                rememberSpeed: true,
+                directMiniPlayer: false,
+                directPiP: false
+            };
             const result = await api.storage.sync.get(['cinemaSettings']);
             if (!result || !result.cinemaSettings) {
+                await api.storage.sync.set({ cinemaSettings: defaultSettings });
+            } else if (result.cinemaSettings.hotkey === 'h' && result.cinemaSettings.directMiniPlayer === true) {
+                // Auto-migrate old default profile settings to new defaults
                 await api.storage.sync.set({
                     cinemaSettings: {
-                        hotkey: 'h',
-                        autoTheater: true,
-                        showIndicator: true,
-                        backdropStyle: 'glass',
-                        overlayOpacity: 90,
-                        ambientLighting: true,
-                        ambientFullScreen: true,
-                        ambientGlow: 75,
-                        autoPause: true,
-                        altClickTrigger: true,
-                        middleClickTrigger: false,
-                        autoHideControls: false,
-                        rememberSpeed: false,
-                        savedSpeed: 1,
-                        directMiniPlayer: true,
+                        ...result.cinemaSettings,
+                        hotkey: ' ',
+                        autoHideControls: true,
+                        rememberSpeed: true,
+                        directMiniPlayer: false,
                         directPiP: false
                     }
                 });
@@ -179,3 +191,4 @@ api.commands.onCommand.addListener(async (command) => {
         }
     }
 });
+

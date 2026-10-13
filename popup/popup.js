@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const ambientLightingCheck = document.getElementById('ambientLighting');
     const ambientFullScreenCheck = document.getElementById('ambientFullScreen');
     const ambientFullScreenItem = document.getElementById('ambientFullScreenItem');
+    const ambientQualitySelect = document.getElementById('ambientQuality');
+    const ambientQualityItem = document.getElementById('ambientQualityItem');
+    const ambientBlurInput = document.getElementById('ambientBlur');
+    const ambientBlurValueSpan = document.getElementById('ambientBlurValue');
+    const ambientBlurItem = document.getElementById('ambientBlurItem');
     const ambientGlowInput = document.getElementById('ambientGlow');
     const ambientGlowValueSpan = document.getElementById('ambientGlowValue');
     const ambientGlowItem = document.getElementById('ambientGlowItem');
@@ -21,18 +26,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const autoTheaterCheck = document.getElementById('autoTheater');
     const showIndicatorCheck = document.getElementById('showIndicator');
 
-    let currentHotkey = 'h';
+    let currentHotkey = ' ';
     let isRecordingKey = false;
-    let savedSpeedVal = 1;
 
     function formatKeyDisplay(key) {
-        if (!key) return 'H';
+        if (!key) return 'Space';
         if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
         return key.toUpperCase();
     }
 
     function updateHotkeyDisplay(key) {
-        currentHotkey = key || 'h';
+        currentHotkey = key || ' ';
         const display = formatKeyDisplay(currentHotkey);
         if (hotkeyRecorderText) {
             hotkeyRecorderText.textContent = display;
@@ -58,14 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isAmbient) {
             ambientFullScreenItem.classList.add('disabled');
             ambientFullScreenCheck.disabled = true;
+            ambientQualityItem.classList.add('disabled');
+            ambientQualitySelect.disabled = true;
+            ambientBlurItem.classList.add('disabled');
+            ambientBlurInput.disabled = true;
             ambientGlowItem.classList.add('disabled');
             ambientGlowInput.disabled = true;
         } else {
             ambientFullScreenItem.classList.remove('disabled');
             ambientFullScreenCheck.disabled = false;
+            ambientQualityItem.classList.remove('disabled');
+            ambientQualitySelect.disabled = false;
+            ambientBlurItem.classList.remove('disabled');
+            ambientBlurInput.disabled = false;
             ambientGlowItem.classList.remove('disabled');
             ambientGlowInput.disabled = false;
         }
+        ambientBlurValueSpan.textContent = `${ambientBlurInput.value}px`;
         ambientGlowValueSpan.textContent = `${ambientGlowInput.value}%`;
     }
 
@@ -73,37 +86,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getSettings(callback) {
         try {
-            const res = api.storage.sync.get(['cinemaSettings'], (result) => {
-                if (result) callback(result);
+            api.storage.sync.get(['cinemaSettings'], (result) => {
+                if (callback) callback(result || {});
             });
-            if (res && typeof res.then === 'function') {
-                res.then(callback).catch(err => console.error('[Cinema Mode] Storage get error:', err));
-            }
         } catch (e) {
             console.error('[Cinema Mode] Storage get error:', e);
+            if (callback) callback({});
         }
     }
 
     function saveSettingsToStorage(settings, callback) {
         try {
-            const res = api.storage.sync.set({ cinemaSettings: settings }, () => {
+            api.storage.sync.set({ cinemaSettings: settings }, () => {
                 if (callback) callback();
             });
-            if (res && typeof res.then === 'function') {
-                res.then(callback).catch(err => console.error('[Cinema Mode] Storage set error:', err));
-            }
         } catch (e) {
             console.error('[Cinema Mode] Storage set error:', e);
+            if (callback) callback();
         }
     }
 
     getSettings((result) => {
-        const settings = (result && result.cinemaSettings) || {};
+        let settings = (result && result.cinemaSettings) || {};
+
+        // Migrate old default settings if user hasn't explicitly customized them
+        if (settings.hotkey === 'h' && settings.directMiniPlayer === true) {
+            settings = {
+                ...settings,
+                hotkey: ' ',
+                autoHideControls: true,
+                rememberSpeed: true,
+                directMiniPlayer: false,
+                directPiP: false
+            };
+            saveSettings();
+        }
 
         if (settings.hotkey) {
             updateHotkeyDisplay(settings.hotkey);
         } else {
-            updateHotkeyDisplay('h');
+            updateHotkeyDisplay(' ');
         }
 
         if (settings.backdropStyle) {
@@ -125,31 +147,38 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             ambientGlowInput.value = 75;
         }
+        if (settings.ambientQuality !== undefined) {
+            ambientQualitySelect.value = settings.ambientQuality;
+        } else {
+            ambientQualitySelect.value = 'high';
+        }
+        if (settings.ambientBlur !== undefined) {
+            ambientBlurInput.value = settings.ambientBlur;
+        } else {
+            ambientBlurInput.value = 80;
+        }
         if (settings.autoPause !== undefined) {
             autoPauseCheck.checked = settings.autoPause;
         }
         if (settings.autoHideControls !== undefined) {
             autoHideControlsCheck.checked = settings.autoHideControls;
         } else {
-            autoHideControlsCheck.checked = false;
+            autoHideControlsCheck.checked = true;
         }
         if (settings.rememberSpeed !== undefined) {
             rememberSpeedCheck.checked = settings.rememberSpeed;
         } else {
-            rememberSpeedCheck.checked = false;
+            rememberSpeedCheck.checked = true;
         }
         if (settings.directMiniPlayer !== undefined) {
             directMiniPlayerCheck.checked = settings.directMiniPlayer;
         } else {
-            directMiniPlayerCheck.checked = true;
+            directMiniPlayerCheck.checked = false;
         }
         if (settings.directPiP !== undefined) {
             directPiPCheck.checked = settings.directPiP;
         } else {
             directPiPCheck.checked = false;
-        }
-        if (settings.savedSpeed !== undefined) {
-            savedSpeedVal = settings.savedSpeed;
         }
         if (settings.altClickTrigger !== undefined) {
             altClickCheck.checked = settings.altClickTrigger;
@@ -175,13 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
             overlayOpacity: parseInt(overlayOpacityInput.value, 10),
             ambientLighting: ambientLightingCheck.checked,
             ambientFullScreen: ambientFullScreenCheck.checked,
+            ambientQuality: ambientQualitySelect.value,
+            ambientBlur: parseInt(ambientBlurInput.value, 10),
             ambientGlow: parseInt(ambientGlowInput.value, 10),
             autoPause: autoPauseCheck.checked,
             autoHideControls: autoHideControlsCheck.checked,
             rememberSpeed: rememberSpeedCheck.checked,
             directMiniPlayer: directMiniPlayerCheck.checked,
             directPiP: directPiPCheck.checked,
-            savedSpeed: savedSpeedVal,
             altClickTrigger: altClickCheck.checked,
             middleClickTrigger: middleClickCheck.checked,
             autoTheater: autoTheaterCheck.checked,
@@ -248,11 +278,38 @@ document.addEventListener('DOMContentLoaded', () => {
     overlayOpacityInput.addEventListener('input', () => {
         opacityValueSpan.textContent = `${overlayOpacityInput.value}%`;
     });
+    overlayOpacityInput.addEventListener('change', saveSettings);
     ambientLightingCheck.addEventListener('change', () => {
         updateAmbientUI();
         saveSettings();
     });
     ambientFullScreenCheck.addEventListener('change', saveSettings);
+    ambientQualitySelect.addEventListener('change', () => {
+        const val = ambientQualitySelect.value;
+        if (val === 'high') {
+            ambientBlurInput.value = 80;
+        } else if (val === 'medium') {
+            ambientBlurInput.value = 40;
+        } else if (val === 'low') {
+            ambientBlurInput.value = 0;
+        }
+        ambientBlurValueSpan.textContent = `${ambientBlurInput.value}px`;
+        saveSettings();
+    });
+    ambientBlurInput.addEventListener('input', () => {
+        const blur = parseInt(ambientBlurInput.value, 10);
+        if (blur === 80) {
+            ambientQualitySelect.value = 'high';
+        } else if (blur === 40) {
+            ambientQualitySelect.value = 'medium';
+        } else if (blur === 0) {
+            ambientQualitySelect.value = 'low';
+        } else {
+            ambientQualitySelect.value = 'custom';
+        }
+        ambientBlurValueSpan.textContent = `${blur}px`;
+    });
+    ambientBlurInput.addEventListener('change', saveSettings);
     ambientGlowInput.addEventListener('input', () => {
         ambientGlowValueSpan.textContent = `${ambientGlowInput.value}%`;
     });

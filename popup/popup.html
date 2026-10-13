@@ -26,7 +26,7 @@
                     </div>
                     <div class="step">
                         <span class="step-num">2</span>
-                        <span>Press <kbd class="hotkey-kbd">H</kbd> to open cinema mode</span>
+                        <span>Press <kbd class="hotkey-kbd">Space</kbd> to open cinema mode</span>
                     </div>
                     <div class="step">
                         <span class="step-num">3</span>
@@ -41,7 +41,7 @@
                 <div class="setting-item">
                     <label for="hotkeyRecorder">Cinema Hotkey</label>
                     <button type="button" id="hotkeyRecorder" class="hotkey-recorder-btn" title="Click to record a new hotkey">
-                        <span id="hotkeyRecorderText">H</span>
+                        <span id="hotkeyRecorderText">Space</span>
                         <span class="hotkey-record-hint">Click to change</span>
                     </button>
                 </div>
@@ -72,6 +72,24 @@
                     <input type="checkbox" id="ambientFullScreen" checked>
                 </div>
 
+                <div class="setting-item" id="ambientQualityItem">
+                    <label for="ambientQuality">Ambient Glow Quality</label>
+                    <select id="ambientQuality">
+                        <option value="high">High (Original 80px Blur)</option>
+                        <option value="medium">Balanced (40px Blur)</option>
+                        <option value="low">Performance (No Blur)</option>
+                        <option value="custom">Custom Blur Radius</option>
+                    </select>
+                </div>
+
+                <div class="setting-item setting-slider-item" id="ambientBlurItem">
+                    <div class="setting-slider-header">
+                        <label for="ambientBlur">Glow Blur Radius</label>
+                        <span class="slider-value" id="ambientBlurValue">80px</span>
+                    </div>
+                    <input type="range" id="ambientBlur" min="0" max="120" value="80" step="5">
+                </div>
+
                 <div class="setting-item setting-slider-item" id="ambientGlowItem">
                     <div class="setting-slider-header">
                         <label for="ambientGlow">Glow Effect / Intensity</label>
@@ -86,22 +104,22 @@
                 </div>
 
                 <div class="setting-item">
-                    <label for="autoHideControls">Auto-Hide Controls (2.5s)</label>
-                    <input type="checkbox" id="autoHideControls">
+                    <label for="autoHideControls">Auto-Hide Controls (0.5s)</label>
+                    <input type="checkbox" id="autoHideControls" checked>
                 </div>
 
                 <div class="setting-item">
                     <label for="rememberSpeed">Remember Playback Speed</label>
-                    <input type="checkbox" id="rememberSpeed">
+                    <input type="checkbox" id="rememberSpeed" checked>
                 </div>
 
                 <div class="setting-item">
-                    <label for="directMiniPlayer">Direct Mini-Player (Ctrl + <span class="hotkey-kbd">H</span>)</label>
-                    <input type="checkbox" id="directMiniPlayer" checked>
+                    <label for="directMiniPlayer">Direct Mini-Player (Ctrl + <span class="hotkey-kbd">Space</span>)</label>
+                    <input type="checkbox" id="directMiniPlayer">
                 </div>
 
                 <div class="setting-item">
-                    <label for="directPiP">Direct Picture-in-Picture (Hover + <span class="hotkey-kbd">H</span>)</label>
+                    <label for="directPiP">Direct Picture-in-Picture (Hover + <span class="hotkey-kbd">Space</span>)</label>
                     <input type="checkbox" id="directPiP">
                 </div>
 
@@ -130,11 +148,11 @@
                 <h3>Keyboard Shortcuts</h3>
                 <div class="shortcut-list">
                     <div class="shortcut">
-                        <kbd class="hotkey-kbd">H</kbd>
+                        <kbd class="hotkey-kbd">Space</kbd>
                         <span>Open cinema mode</span>
                     </div>
                     <div class="shortcut">
-                        <kbd>Ctrl+<span class="hotkey-kbd">H</span></kbd>
+                        <kbd>Ctrl+<span class="hotkey-kbd">Space</span></kbd>
                         <span>Open Mini-Player directly</span>
                     </div>
                     <div class="shortcut">

@@ -1,7 +1,7 @@
 {
   "name": "youtube-cinema-mode",
-  "version": "1.0.0",
-  "description": "Hover over any YouTube thumbnail and press 'H' to watch in a beautiful cinema overlay",
+  "version": "1.1.1",
+  "description": "Hover over any YouTube thumbnail and press 'Space' to watch in a beautiful cinema overlay",
   "scripts": {
     "build": "node build.js"
   },
