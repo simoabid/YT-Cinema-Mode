@@ -186,8 +186,7 @@
                 // If on a watch or shorts page, toggle current video
                 const vidId = getVideoID(window.location.href);
                 if (vidId) {
-                    const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, yt-formatted-string.ytd-watch-metadata');
-                    const pageTitle = titleEl?.textContent?.trim() || document.title.replace(/ - YouTube$/, '').trim() || 'YouTube Video';
+                    const pageTitle = getCurrentWatchPageTitle();
                     let pageTimestamp = null;
                     const pageVideo = document.querySelector('video');
                     if (pageVideo && pageVideo.currentTime > 0) {
@@ -344,7 +343,19 @@
             try { data = JSON.parse(data); } catch (_) { return; }
         }
 
+        if (typeof data === 'object') {
+            const isError = data.event === 'onError' ||
+                (typeof data.info === 'number' && [150, 152, 153, 101, 100, 2, 5].includes(data.info)) ||
+                (typeof data.data === 'number' && [150, 152, 153, 101, 100, 2, 5].includes(data.data)) ||
+                (typeof data.info === 'string' && (data.info.includes('152') || data.info.includes('150') || data.info.includes('unavailable')));
 
+            if (isError && !ov._isWatchFallback) {
+                const iframeEl = ov.querySelector('iframe');
+                if (iframeEl) {
+                    triggerWatchFallback(ov, iframeEl, ov._currentVideoId, ov._initialTimestamp);
+                }
+            }
+        }
     });
 
     function adjustContainerSize(videoWidth, videoHeight, targetOverlay = activeModalOverlay) {
@@ -566,6 +577,43 @@
         return match ? match[1] : null;
     }
 
+    function parseTimestampToSeconds(ts) {
+        if (!ts) return 0;
+        if (typeof ts === 'number') return Math.floor(ts);
+        const str = String(ts).trim();
+        if (/^\d+s?$/i.test(str)) return parseInt(str, 10);
+        let total = 0;
+        const h = str.match(/(\d+)h/i);
+        const m = str.match(/(\d+)m/i);
+        const s = str.match(/(\d+)s/i);
+        if (h) total += parseInt(h[1], 10) * 3600;
+        if (m) total += parseInt(m[1], 10) * 60;
+        if (s) total += parseInt(s[1], 10);
+        return total;
+    }
+
+    function buildPlayerUrl(videoId, isShort = false, timestamp = null, useEmbed = true) {
+        if (useEmbed) {
+            let src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&enablejsapi=1&rel=0`;
+            if (timestamp) {
+                const sec = parseTimestampToSeconds(timestamp);
+                if (sec > 0) src += `&start=${sec}`;
+            }
+            if (isShort) {
+                src += `&loop=1&playlist=${encodeURIComponent(videoId)}`;
+            }
+            return src;
+        } else {
+            let src = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&autoplay=1`;
+            if (timestamp) {
+                src += `&t=${encodeURIComponent(timestamp)}`;
+            }
+            if (isShort) {
+                src += `&loop=1&playlist=${encodeURIComponent(videoId)}`;
+            }
+            return src;
+        }
+    }
 
     function getVideoTitle(element) {
         if (!element) return 'YouTube Video';
@@ -605,6 +653,10 @@
         return 'YouTube Video';
     }
 
+    function getCurrentWatchPageTitle() {
+        const titleEl = document.querySelector('h1.ytd-watch-metadata yt-formatted-string, #title h1, yt-formatted-string.ytd-watch-metadata');
+        return titleEl?.textContent?.trim() || document.title.replace(/ - YouTube$/, '').trim() || 'YouTube Video';
+    }
 
     let pageToastTimer = null;
     let pageToastEl = null;
@@ -791,22 +843,17 @@
 
         const iframe = document.createElement('iframe');
         iframe.className = 'yt-cinema-iframe';
-        let iframeSrc = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&autoplay=1`;
-        if (initialTimestamp) {
-            iframeSrc += `&t=${encodeURIComponent(initialTimestamp)}`;
-        }
-        if (isShort) {
-            iframeSrc += `&loop=1&playlist=${encodeURIComponent(videoId)}`;
-        }
+        let iframeSrc = buildPlayerUrl(videoId, isShort, initialTimestamp, true);
         overlay.dataset.videoId = videoId;
         overlay._currentVideoId = videoId;
         overlay._initialTimestamp = initialTimestamp;
         overlay._isShort = isShort;
+        overlay._isWatchFallback = false;
 
         iframe.src = iframeSrc;
         iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         iframe.allowFullscreen = true;
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups');
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
 
         const dragShield = document.createElement('div');
         dragShield.className = 'yt-cinema-drag-shield';
@@ -911,10 +958,77 @@
 
         // Event-driven player initialization on load
         iframe.addEventListener('load', () => {
-            injectPlayerStyles(iframe, overlay._currentVideoId || videoId, overlay, ambientCtx, ambientCanvas);
+            injectPlayerStyles(iframe, overlay._currentVideoId || videoId, overlay, ambientCtx, ambientCanvas, overlay._isWatchFallback);
         });
 
         setupOverlayEvents(overlay, iframe, videoId, initialTimestamp, isShort, ambientCtx, ambientCanvas, ambientLayer, startDocked, isDirectPiP);
+    }
+
+    function triggerWatchFallback(overlayElement, iframe, videoId, timestamp = null) {
+        if (!overlayElement || !iframe || overlayElement._isWatchFallback || overlayElement._fallbackNoticeShown) return;
+        overlayElement._fallbackNoticeShown = true;
+        overlayElement._cachedVideo = null;
+        overlayElement._cachedPlayer = null;
+
+        if (typeof overlayElement._stopAmbient === 'function') {
+            overlayElement._stopAmbient();
+        }
+
+        const playerWrapper = overlayElement.querySelector('.yt-cinema-player-wrapper');
+        if (!playerWrapper) return;
+
+        const watchUrl = buildPlayerUrl(videoId, overlayElement._isShort, timestamp, false);
+
+        const fallbackCard = document.createElement('div');
+        fallbackCard.className = 'yt-cinema-fallback-notice';
+        fallbackCard.innerHTML = `
+            <div class="yt-cinema-fallback-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+            </div>
+            <div class="yt-cinema-fallback-title">Playback Restricted by YouTube</div>
+            <div class="yt-cinema-fallback-desc">Embedding is disabled by the owner or YouTube for this video. You can open it in a new tab or try the full web player.</div>
+            <div class="yt-cinema-fallback-actions">
+                <button class="yt-cinema-fallback-btn yt-cinema-fallback-btn-primary yt-cinema-fallback-open-tab" type="button">Open in New Tab</button>
+                <button class="yt-cinema-fallback-btn yt-cinema-fallback-btn-secondary yt-cinema-fallback-try-full" type="button">Try Full Player</button>
+            </div>
+        `;
+
+        const openTabBtn = fallbackCard.querySelector('.yt-cinema-fallback-open-tab');
+        const tryFullBtn = fallbackCard.querySelector('.yt-cinema-fallback-try-full');
+
+        if (openTabBtn) {
+            openTabBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.open(watchUrl, '_blank');
+                if (typeof overlayElement._close === 'function') {
+                    overlayElement._close();
+                }
+            });
+        }
+
+        if (tryFullBtn) {
+            tryFullBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fallbackCard.remove();
+                overlayElement._isWatchFallback = true;
+
+                const toast = overlayElement.querySelector('.yt-cinema-toast');
+                if (toast) {
+                    const textEl = toast.querySelector('.yt-cinema-toast-text');
+                    const iconEl = toast.querySelector('.yt-cinema-toast-icon');
+                    if (textEl) textEl.textContent = 'Loading restricted video via full player...';
+                    if (iconEl) iconEl.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
+                    toast.classList.add('yt-cinema-toast-visible');
+                    setTimeout(() => toast.classList.remove('yt-cinema-toast-visible'), 2400);
+                }
+
+                iframe.src = watchUrl;
+            });
+        }
+
+        playerWrapper.appendChild(fallbackCard);
     }
 
     function initPlayerInIframe(iframe, overlayElement, ambientCtx, ambientCanvas) {
@@ -936,6 +1050,30 @@
                 const doc = iframe.contentDocument || iframe.contentWindow?.document;
                 if (!doc) return;
 
+                // 1. Detect if YouTube embed rendered an error screen (Error 150, 152, 153, syndication blocked)
+                if (!overlayElement._isWatchFallback) {
+                    const errorEl = doc.querySelector('.ytp-error, .ytp-error-content, [class*="ytp-error"], ytd-player-error-message-renderer');
+                    const errorMsg = doc.querySelector('.ytp-error-message, .ytp-error-content-reason');
+                    const hasError = (errorEl && (errorEl.offsetHeight > 0 || errorEl.offsetWidth > 0)) ||
+                        (errorMsg && errorMsg.textContent?.trim().length > 0) ||
+                        doc.body?.textContent?.includes('Error code:') ||
+                        doc.body?.textContent?.includes('This video is unavailable') ||
+                        doc.body?.textContent?.includes('Playback on other websites has been disabled');
+
+                    if (hasError) {
+                        triggerWatchFallback(overlayElement, iframe, overlayElement._currentVideoId, overlayElement._initialTimestamp);
+                        return;
+                    }
+
+                    // If after 8 attempts (~1.6s) there is still no video element in the embed, check if blocked
+                    if (attempts >= 8 && !doc.querySelector('video')) {
+                        const playabilityBlocked = doc.querySelector('.ytp-playability-error, [class*="error"]');
+                        if (playabilityBlocked) {
+                            triggerWatchFallback(overlayElement, iframe, overlayElement._currentVideoId, overlayElement._initialTimestamp);
+                            return;
+                        }
+                    }
+                }
 
                 const video = doc.querySelector('video');
                 const moviePlayer = doc.getElementById('movie_player') || doc.querySelector('.html5-video-player');
@@ -971,7 +1109,7 @@
         checkReady();
     }
 
-    function injectPlayerStyles(iframe, videoId, overlayElement, ambientCtx, ambientCanvas) {
+    function injectPlayerStyles(iframe, videoId, overlayElement, ambientCtx, ambientCanvas, isWatchFallback = false) {
         try {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
             if (!doc) return;
@@ -981,7 +1119,7 @@
                 style = doc.createElement('style');
                 style.id = 'yt-cinema-injected-styles';
                 style.textContent = `
-                
+                ${isWatchFallback ? `
                 /* Hide all non-player UI elements on watch page fallback */
                 ytd-masthead, #masthead, #masthead-container,
                 #secondary, #comments, #related, #info, #meta,
@@ -1027,7 +1165,7 @@
                     background: #000 !important;
                     overflow: hidden !important;
                 }
-                
+                ` : ''}
 
                 html, body, #player, #movie_player, .html5-video-player { 
                     background: #000 !important; 
@@ -1134,22 +1272,7 @@
             }
         } catch (_) {}
 
-        if (fallbackTimestamp) {
-            if (typeof fallbackTimestamp === 'number') return Math.floor(fallbackTimestamp);
-            const str = String(fallbackTimestamp).trim();
-            if (/^\d+s?$/i.test(str)) {
-                return parseInt(str, 10);
-            }
-            let total = 0;
-            const hMatch = str.match(/(\d+)h/i);
-            const mMatch = str.match(/(\d+)m/i);
-            const sMatch = str.match(/(\d+)s/i);
-            if (hMatch) total += parseInt(hMatch[1], 10) * 3600;
-            if (mMatch) total += parseInt(mMatch[1], 10) * 60;
-            if (sMatch) total += parseInt(sMatch[1], 10);
-            if (total > 0) return total;
-        }
-        return 0;
+        return parseTimestampToSeconds(fallbackTimestamp);
     }
 
     function findNextRecommendation(currentId) {
@@ -1405,11 +1528,8 @@
                 }
             }
 
-            if (isShortVid) {
-                iframe.src = `https://www.youtube.com/watch?v=${encodeURIComponent(newId)}&autoplay=1&loop=1&playlist=${encodeURIComponent(newId)}`;
-            } else {
-                iframe.src = `https://www.youtube.com/watch?v=${encodeURIComponent(newId)}&autoplay=1`;
-            }
+            // Load via lightweight embed player
+            iframe.src = buildPlayerUrl(newId, isShortVid, null, true);
         };
 
         let autoHideTimer = null;
