@@ -5,11 +5,17 @@
   "description": "Hover over any YouTube thumbnail and press 'H' to watch in a beautiful cinema overlay",
   "permissions": [
     "storage",
-    "clipboardWrite"
+    "clipboardWrite",
+    "webRequest",
+    "webRequestBlocking",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
-    "https://www.youtube.com/*",
-    "https://youtube.com/*"
+    "https://*.youtube.com/*",
+    "https://youtube.com/*",
+    "https://*.youtube-nocookie.com/*",
+    "https://youtube-nocookie.com/*"
   ],
   "background": {
     "scripts": [
@@ -66,4 +72,3 @@
     }
   }
 }
-
