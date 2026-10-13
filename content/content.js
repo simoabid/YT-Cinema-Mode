@@ -85,6 +85,16 @@
         targetOverlay.style.setProperty('--yt-cinema-ambient-brightness', `${brightness}%`);
     }
 
+    function lockScroll() {
+        document.documentElement.style.scrollbarGutter = 'stable';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function unlockScroll() {
+        document.body.style.overflow = '';
+        document.documentElement.style.scrollbarGutter = '';
+    }
+
     function applyBackdropSettings(targetOverlay = activeModalOverlay) {
         if (!targetOverlay) return;
         if (settings.backdropStyle === 'oled') {
@@ -796,7 +806,11 @@
         ambientCanvas.className = 'yt-cinema-ambient-canvas';
         ambientCanvas.width = 32;
         ambientCanvas.height = 18;
-        const ambientCtx = ambientCanvas.getContext('2d', { willReadFrequently: true });
+        // Hardware-accelerated GPU 2D context
+        const ambientCtx = ambientCanvas.getContext('2d');
+        if (ambientCtx) {
+            ambientCtx.imageSmoothingQuality = 'high';
+        }
 
         const ambientFallback = document.createElement('div');
         ambientFallback.className = 'yt-cinema-ambient-fallback';
@@ -810,7 +824,7 @@
 
         if (!startDocked) {
             applyBackdropSettings(overlay);
-            document.body.style.overflow = 'hidden';
+            lockScroll();
         }
         pauseBackgroundVideo();
 
@@ -1946,7 +1960,7 @@
                     autoHideTimer = null;
                 }
                 if (!activeModalOverlay) {
-                    document.body.style.overflow = '';
+                    unlockScroll();
                 }
                 if (dockBtn) {
                     dockBtn.setAttribute('title', 'Expand Cinema Mode (D)');
@@ -1972,7 +1986,7 @@
                 container.style.removeProperty('--yt-dock-y');
                 container.style.removeProperty('--yt-dock-w');
                 container.style.removeProperty('--yt-dock-h');
-                document.body.style.overflow = 'hidden';
+                lockScroll();
 
                 if (dockBtn) {
                     dockBtn.setAttribute('title', 'Mini-Player / Corner Dock (D)');
@@ -2407,7 +2421,7 @@
             overlayElement.classList.remove('yt-cinema-visible');
             overlayElement.classList.remove('yt-cinema-docked');
             if (!activeModalOverlay) {
-                document.body.style.overflow = '';
+                unlockScroll();
             }
 
             try {
