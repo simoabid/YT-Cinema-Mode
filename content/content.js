@@ -45,13 +45,36 @@
         showIndicator: true
     };
 
+    function debounce(fn, wait) {
+        let timer = null;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), wait);
+        };
+    }
+
+    const persistSpeed = debounce((s) => {
+        try {
+            api.storage.local.set({ ytCinemaSavedSpeed: s });
+        } catch (_) {}
+    }, 600);
+
     function applyAmbientSettings(targetOverlay = activeModalOverlay) {
         if (!targetOverlay) return;
         const ambientLayer = targetOverlay.querySelector('.yt-cinema-ambient-layer');
         if (!ambientLayer) return;
 
         ambientLayer.style.display = settings.ambientLighting ? 'flex' : 'none';
-        if (!settings.ambientLighting) return;
+        if (!settings.ambientLighting) {
+            if (typeof targetOverlay._stopAmbient === 'function') {
+                targetOverlay._stopAmbient();
+            }
+            return;
+        } else {
+            if (typeof targetOverlay._startAmbient === 'function') {
+                targetOverlay._startAmbient();
+            }
+        }
 
         const isFullScreenGlow = settings.ambientFullScreen !== false;
         if (isFullScreenGlow) {
@@ -412,64 +435,81 @@
         }
     });
 
-    try {
-        const updateFromSettings = (cinemaSettings) => {
-            if (cinemaSettings) {
-                settings = { ...settings, ...cinemaSettings };
+    function applySettings(cinemaSettings) {
+        if (!cinemaSettings) return;
+
+        const prevShowIndicator = settings.showIndicator;
+        const prevHotkey = settings.hotkey;
+        const prevOpacity = settings.overlayOpacity;
+        const prevBackdrop = settings.backdropStyle;
+        const prevAmbient = settings.ambientLighting;
+        const prevFs = settings.ambientFullScreen;
+        const prevGlow = settings.ambientGlow;
+        const prevAutoHide = settings.autoHideControls;
+
+        settings = { ...settings, ...cinemaSettings };
+
+        if (settings.showIndicator !== prevShowIndicator || settings.hotkey !== prevHotkey) {
+            if (!settings.showIndicator) {
+                hideHoverIndicator();
+            } else {
                 updateHoverIndicatorHotkey();
-                if (activeModalOverlay) {
-                    applyBackdropSettings(activeModalOverlay);
-                    if (typeof activeModalOverlay._updateAutoHide === 'function') {
-                        activeModalOverlay._updateAutoHide();
-                    }
-                }
-                for (const ov of activeDockedOverlays) {
-                    if (typeof ov._updateAutoHide === 'function') {
-                        ov._updateAutoHide();
-                    }
-                }
             }
-        };
-        const storageGet = api.storage.sync.get(['cinemaSettings'], (result) => {
-            if (result && result.cinemaSettings) {
-                updateFromSettings(result.cinemaSettings);
-            }
-        });
-        if (storageGet && typeof storageGet.then === 'function') {
-            storageGet.then((result) => {
-                if (result && result.cinemaSettings) {
-                    updateFromSettings(result.cinemaSettings);
-                }
-            }).catch(() => {});
         }
-    } catch (e) {}
+
+        const backdropChanged = (
+            settings.overlayOpacity !== prevOpacity ||
+            settings.backdropStyle !== prevBackdrop ||
+            settings.ambientLighting !== prevAmbient ||
+            settings.ambientFullScreen !== prevFs ||
+            settings.ambientGlow !== prevGlow
+        );
+
+        if (backdropChanged && activeModalOverlay) {
+            applyBackdropSettings(activeModalOverlay);
+        }
+
+        if (settings.autoHideControls !== prevAutoHide) {
+            if (activeModalOverlay && typeof activeModalOverlay._updateAutoHide === 'function') {
+                activeModalOverlay._updateAutoHide();
+            }
+            for (const ov of activeDockedOverlays) {
+                if (typeof ov._updateAutoHide === 'function') {
+                    ov._updateAutoHide();
+                }
+            }
+        }
+    }
+
+    try {
+        api.storage.sync.get(['cinemaSettings'], (syncRes) => {
+            const syncSettings = syncRes && syncRes.cinemaSettings;
+            if (syncSettings) {
+                applySettings(syncSettings);
+            }
+            // Check local storage for saved speed with one-time sync migration
+            try {
+                api.storage.local.get(['ytCinemaSavedSpeed'], (localRes) => {
+                    if (localRes && typeof localRes.ytCinemaSavedSpeed === 'number') {
+                        settings.savedSpeed = localRes.ytCinemaSavedSpeed;
+                    } else if (syncSettings && typeof syncSettings.savedSpeed === 'number') {
+                        settings.savedSpeed = syncSettings.savedSpeed;
+                        api.storage.local.set({ ytCinemaSavedSpeed: syncSettings.savedSpeed });
+                    }
+                });
+            } catch (_) {}
+        });
+    } catch (_) {}
 
     try {
         api.storage.onChanged.addListener((changes, area) => {
-            if (area === 'sync' && changes.cinemaSettings) {
-                const newSettings = changes.cinemaSettings.newValue;
-                if (newSettings) {
-                    settings = { ...settings, ...newSettings };
-                    if (!settings.showIndicator) {
-                        hideHoverIndicator();
-                    } else {
-                        updateHoverIndicatorHotkey();
-                    }
-                    if (activeModalOverlay) {
-                        applyBackdropSettings(activeModalOverlay);
-                        if (typeof activeModalOverlay._updateAutoHide === 'function') {
-                            activeModalOverlay._updateAutoHide();
-                        }
-                    }
-                    for (const ov of activeDockedOverlays) {
-                        if (typeof ov._updateAutoHide === 'function') {
-                            ov._updateAutoHide();
-                        }
-                    }
-                }
+            if (area === 'sync' && changes.cinemaSettings && changes.cinemaSettings.newValue) {
+                applySettings(changes.cinemaSettings.newValue);
+            } else if (area === 'local' && changes.ytCinemaSavedSpeed && typeof changes.ytCinemaSavedSpeed.newValue === 'number') {
+                settings.savedSpeed = changes.ytCinemaSavedSpeed.newValue;
             }
         });
-    } catch (e) {}
+    } catch (_) {}
 
     function getVideoID(url) {
         if (!url) return null;
@@ -1300,14 +1340,7 @@
 
             if (settings.rememberSpeed) {
                 settings.savedSpeed = speed;
-                try {
-                    api.storage.sync.set({
-                        cinemaSettings: {
-                            ...settings,
-                            savedSpeed: speed
-                        }
-                    });
-                } catch (e) {}
+                persistSpeed(speed);
             }
 
             if (showNotification) {
@@ -1947,6 +1980,9 @@
             isDocked = nextDocked;
 
             if (isDocked) {
+                if (typeof overlayElement._stopAmbient === 'function') {
+                    overlayElement._stopAmbient();
+                }
                 if (activeModalOverlay === overlayElement) {
                     activeModalOverlay = null;
                 }
@@ -1993,6 +2029,9 @@
                     dockBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 11h-8v6h8v-6zm4-8H1v18h22V3zm-2 16H3V5h18v14z"/></svg>`;
                 }
                 applyBackdropSettings(overlayElement);
+                if (typeof overlayElement._startAmbient === 'function') {
+                    overlayElement._startAmbient();
+                }
                 resetAutoHideTimer();
             }
         };
@@ -2371,6 +2410,37 @@
             }
         };
 
+        // Low-frequency ~10 FPS ambient canvas timer (gated when hidden, paused, or docked)
+        const AMBIENT_INTERVAL = 100;
+        let ambientTimer = null;
+
+        const drawAmbient = () => {
+            if (!overlayElement.isConnected) return stopAmbient();
+            if (document.hidden) return;
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                const video = doc?.querySelector('video');
+                if (video && !video.paused && !video.ended && video.readyState >= 2 && ambientCtx && ambientCanvas) {
+                    ambientCtx.drawImage(video, 0, 0, ambientCanvas.width, ambientCanvas.height);
+                }
+            } catch (_) {}
+        };
+
+        const startAmbient = () => {
+            if (ambientTimer || isDocked || !settings.ambientLighting || !ambientCtx || !ambientCanvas) return;
+            ambientTimer = setInterval(drawAmbient, AMBIENT_INTERVAL);
+        };
+
+        const stopAmbient = () => {
+            if (ambientTimer) {
+                clearInterval(ambientTimer);
+                ambientTimer = null;
+            }
+        };
+
+        overlayElement._startAmbient = startAmbient;
+        overlayElement._stopAmbient = stopAmbient;
+
         const closeOverlay = () => {
             if (!overlayElement.isConnected) return;
 
@@ -2383,6 +2453,7 @@
                 cancelAnimationFrame(overlayElement._ambientAnimFrameId);
                 overlayElement._ambientAnimFrameId = null;
             }
+            stopAmbient();
 
             if (toastTimer) {
                 clearTimeout(toastTimer);
@@ -2805,14 +2876,7 @@
                                     updateSpeedUI(currentSpeed);
                                     if (settings.rememberSpeed) {
                                         settings.savedSpeed = currentSpeed;
-                                        try {
-                                            api.storage.sync.set({
-                                                cinemaSettings: {
-                                                    ...settings,
-                                                    savedSpeed: currentSpeed
-                                                }
-                                            });
-                                        } catch (e) {}
+                                        persistSpeed(currentSpeed);
                                     }
                                 }
                             }
