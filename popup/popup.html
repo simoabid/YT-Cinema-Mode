@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Cinema Mode</title>
+    <link rel="stylesheet" href="../content/styles/00-themes.css">
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
                 <img src="../icons/icon32.png" alt="Cinema Mode" width="22" height="22">
                 <span>Cinema Mode</span>
             </div>
-            <div class="version">v1.0</div>
+            <div class="version" id="popupVersion">v1.1.1</div>
         </header>
 
         <main class="popup-content">
@@ -37,6 +38,16 @@
 
             <section class="section">
                 <h3>Settings</h3>
+
+                <div class="setting-item">
+                    <label for="theme">Theme</label>
+                    <select id="theme">
+                        <option value="mocha">Catppuccin Mocha</option>
+                        <option value="macchiato">Catppuccin Macchiato</option>
+                        <option value="frappe">Catppuccin Frappé</option>
+                        <option value="latte">Catppuccin Latte</option>
+                    </select>
+                </div>
                 
                 <div class="setting-item">
                     <label for="hotkeyRecorder">Cinema Hotkey</label>
@@ -114,6 +125,11 @@
                 </div>
 
                 <div class="setting-item">
+                    <label for="rememberQuality">Remember Video Quality</label>
+                    <input type="checkbox" id="rememberQuality" checked>
+                </div>
+
+                <div class="setting-item">
                     <label for="directMiniPlayer">Direct Mini-Player (Ctrl + <span class="hotkey-kbd">Space</span>)</label>
                     <input type="checkbox" id="directMiniPlayer">
                 </div>
@@ -134,7 +150,7 @@
                 </div>
 
                 <div class="setting-item">
-                    <label for="autoTheater">Auto Theater Mode</label>
+                    <label for="autoTheater">Auto Theater Mode (fallback player)</label>
                     <input type="checkbox" id="autoTheater" checked>
                 </div>
 
@@ -174,6 +190,10 @@
                     <div class="shortcut">
                         <kbd>[</kbd> <kbd>]</kbd>
                         <span>Adjust speed</span>
+                    </div>
+                    <div class="shortcut">
+                        <kbd>Q</kbd>
+                        <span>Quality menu</span>
                     </div>
                     <div class="shortcut">
                         <kbd>D</kbd>

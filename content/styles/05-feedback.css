@@ -1,0 +1,216 @@
+/* Button states, shutter flash, toasts, volume HUD and auto-hide rules. */
+/* Action button variations */
+.yt-cinema-dock-btn:hover {
+    background: var(--ytc-accent-hover) !important;
+    color: var(--ytc-accent-strong) !important;
+}
+
+.yt-cinema-next-btn:hover {
+    background: var(--ytc-fill-active) !important;
+    color: var(--ytc-text-primary) !important;
+}
+
+.yt-cinema-screenshot-btn:hover {
+    background: var(--ytc-accent-hover) !important;
+    color: var(--ytc-accent) !important;
+}
+
+/* Camera Shutter Flash Animation.
+   Deliberately literal white: this mimics a camera flash, and a tinted flash
+   would read as a rendering artefact rather than shutter behaviour. */
+.yt-cinema-shutter-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.85);
+    pointer-events: none;
+    z-index: 25;
+    opacity: 0;
+    transition: opacity 0.35s cubic-bezier(0.1, 0.9, 0.2, 1);
+}
+
+.yt-cinema-shutter-flash.flashing {
+    opacity: 1;
+    transition: none;
+}
+
+/* Modern Floating HUD / Toast Notification */
+.yt-cinema-toast {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    background: var(--ytc-bg-dock);
+    border: 1px solid var(--ytc-border);
+    color: var(--ytc-text-primary);
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    pointer-events: none;
+    z-index: 30;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+    box-shadow: 0 10px 30px var(--ytc-shadow), 0 0 1px var(--ytc-fill-hover);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.yt-cinema-toast.yt-cinema-toast-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.yt-cinema-toast-icon {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-toast-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Toasts embed video titles, which can be arbitrarily long. The toast itself
+   is nowrap, so without a cap here a long title stretches the pill well past
+   the edge of the player (very visible in the docked mini-player). */
+.yt-cinema-toast-text {
+    max-width: min(46ch, 60vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* On-Screen Volume & Mute HUD */
+.yt-cinema-volume-hud {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px) scale(0.96);
+    background: var(--ytc-bg-dock);
+    border: 1px solid var(--ytc-border);
+    color: var(--ytc-text-primary);
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 35;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+    box-shadow: 0 10px 30px var(--ytc-shadow), 0 0 1px var(--ytc-fill-hover);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    min-width: 170px;
+}
+
+.yt-cinema-volume-hud.yt-cinema-volume-hud-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+.yt-cinema-volume-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ytc-accent);
+    flex-shrink: 0;
+}
+
+.yt-cinema-volume-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.yt-cinema-volume-hud.is-muted .yt-cinema-volume-icon {
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-volume-track {
+    flex: 1;
+    height: 4px;
+    background: var(--ytc-fill-active);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    min-width: 70px;
+}
+
+.yt-cinema-volume-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--ytc-accent);
+    border-radius: 2px;
+    transition: width 0.08s ease-out;
+}
+
+.yt-cinema-volume-hud.is-muted .yt-cinema-volume-fill {
+    background: var(--ytc-danger);
+}
+
+.yt-cinema-volume-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ytc-text-primary);
+    min-width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Scaled Volume HUD inside floating mini-player */
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-hud {
+    top: 14px;
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 140px;
+    gap: 8px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-track {
+    min-width: 50px;
+    height: 3px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-volume-text {
+    font-size: 11px;
+    min-width: 32px;
+}
+
+/* Immersive Auto-Hide Controls (True Cinema Mode) */
+.yt-cinema-container.yt-cinema-controls-hidden .yt-cinema-header {
+    opacity: 0 !important;
+    transform: translateY(-8px);
+    pointer-events: none !important;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.yt-cinema-container.yt-cinema-controls-hidden .yt-cinema-footer {
+    opacity: 0 !important;
+    transform: translateY(8px);
+    pointer-events: none !important;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.yt-cinema-container.yt-cinema-controls-hidden,
+.yt-cinema-container.yt-cinema-controls-hidden iframe {
+    cursor: none !important;
+}

@@ -7,9 +7,7 @@
     "storage",
     "clipboardWrite",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess",
-    "webRequest",
-    "webRequestBlocking"
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://*.youtube.com/*",
@@ -42,10 +40,36 @@
         "https://youtube.com/*"
       ],
       "js": [
+        "content/modules/core.js",
+        "content/modules/theme.js",
+        "content/modules/icons.js",
+        "content/modules/video.js",
+        "content/modules/layout.js",
+        "content/modules/player.js",
+        "content/modules/overlay.js",
+        "content/modules/launcher.js",
+        "content/modules/controls/toast.js",
+        "content/modules/controls/autohide.js",
+        "content/modules/controls/speed.js",
+        "content/modules/controls/quality.js",
+        "content/modules/controls/transport.js",
+        "content/modules/controls/ambient.js",
+        "content/modules/controls/screenshot.js",
+        "content/modules/controls/dock.js",
+        "content/modules/controls/navigation.js",
+        "content/modules/controls/keyboard.js",
+        "content/modules/controller.js",
         "content/content.js"
       ],
       "css": [
-        "content/styles.css"
+        "content/styles/00-themes.css",
+        "content/styles/01-overlay.css",
+        "content/styles/02-ambient.css",
+        "content/styles/03-docked.css",
+        "content/styles/04-shorts.css",
+        "content/styles/05-feedback.css",
+        "content/styles/06-menus.css",
+        "content/styles/07-page.css"
       ],
       "run_at": "document_idle"
     }
@@ -56,12 +80,6 @@
         "default": "Alt+H"
       },
       "description": "Toggle cinema mode for hovered video"
-    }
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "yt-cinema-mode@extension",
-      "strict_min_version": "121.0"
     }
   }
 }

@@ -1,0 +1,52 @@
+/* Vertical (Shorts) cinema layout and notch. */
+/* Vertical Shorts Cinema Mode */
+.yt-cinema-container.yt-cinema-shorts {
+    max-width: 480px !important;
+    min-width: 280px !important;
+    border-radius: 26px !important;
+    box-shadow:
+        0 0 0 3px var(--ytc-border),
+        0 25px 60px var(--ytc-shadow-deep),
+        0 0 80px var(--ytc-brand-glow) !important;
+}
+
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-header {
+    padding: 14px 18px;
+}
+
+.yt-cinema-container.yt-cinema-docked.yt-cinema-shorts {
+    width: var(--yt-dock-w, 300px) !important;
+    height: var(--yt-dock-h, 500px) !important;
+    min-width: 240px !important;
+    min-height: 380px !important;
+    border-radius: 18px !important;
+}
+
+.yt-cinema-shorts-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--ytc-brand);
+    color: var(--ytc-on-accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 6px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.yt-cinema-shorts-notch {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 4px;
+    background: var(--ytc-fill-active);
+    border-radius: 2px;
+    z-index: 10;
+    pointer-events: none;
+}

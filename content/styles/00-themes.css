@@ -1,0 +1,235 @@
+/*
+ * Theme tokens — Catppuccin flavors.
+ *
+ * Every colour the extension paints resolves through these custom properties,
+ * so switching the flavor in the popup re-skins the overlay, menus, toasts and
+ * popup without touching any other stylesheet. Palette values are the official
+ * Catppuccin hex codes (https://catppuccin.com/palette); the `-rgb` helpers
+ * exist so translucent surfaces derive from the flavor with rgb(r g b / a).
+ *
+ * theme.js (overlay) and popup.js (popup) put the selected flavor on <html>
+ * as data-ytc-theme. The :root selector doubles as the default flavor — Mocha —
+ * so the first paint is themed even before that attribute is written.
+ */
+
+/* ---------------------------------------------------------------- semantic */
+
+:root,
+[data-ytc-theme="latte"],
+[data-ytc-theme="frappe"],
+[data-ytc-theme="macchiato"],
+[data-ytc-theme="mocha"] {
+    /* Surfaces */
+    --ytc-bg: var(--ytc-base);
+    --ytc-bg-deep: var(--ytc-crust);
+    --ytc-bg-panel: rgb(var(--ytc-mantle-rgb) / 96%);
+    --ytc-bg-dock: rgb(var(--ytc-crust-rgb) / 96%);
+    --ytc-bg-dock-drag: rgb(var(--ytc-crust-rgb) / 98%);
+
+    /* Text */
+    --ytc-text-primary: var(--ytc-text);
+    --ytc-text-secondary: var(--ytc-subtext0);
+    --ytc-text-tertiary: var(--ytc-overlay1);
+    --ytc-text-faint: var(--ytc-overlay0);
+    --ytc-on-accent: var(--ytc-crust);
+
+    /* Neutral fills and outlines, derived from the flavor's text colour so
+       light flavors get dark-on-light controls without extra rules. */
+    --ytc-fill-faint: rgb(var(--ytc-text-rgb) / 4%);
+    --ytc-fill-subtle: rgb(var(--ytc-text-rgb) / 6%);
+    --ytc-fill: rgb(var(--ytc-text-rgb) / 10%);
+    --ytc-fill-hover: rgb(var(--ytc-text-rgb) / 16%);
+    --ytc-fill-active: rgb(var(--ytc-text-rgb) / 22%);
+    --ytc-border: rgb(var(--ytc-text-rgb) / 14%);
+    --ytc-border-strong: rgb(var(--ytc-text-rgb) / 30%);
+
+    /* Accent — interactive controls: pills, menus, sliders, volume HUD. */
+    --ytc-accent: var(--ytc-sapphire);
+    --ytc-accent-strong: var(--ytc-blue);
+    --ytc-accent-softer: rgb(var(--ytc-sapphire-rgb) / 12%);
+    --ytc-accent-soft: rgb(var(--ytc-sapphire-rgb) / 16%);
+    --ytc-accent-hover: rgb(var(--ytc-sapphire-rgb) / 25%);
+    --ytc-accent-glow: rgb(var(--ytc-sapphire-rgb) / 35%);
+    --ytc-accent-border: rgb(var(--ytc-sapphire-rgb) / 50%);
+
+    /* Brand and status colours. */
+    --ytc-brand: var(--ytc-red);
+    --ytc-brand-glow: rgb(var(--ytc-red-rgb) / 18%);
+    --ytc-danger: var(--ytc-red);
+    --ytc-danger-deep: rgb(var(--ytc-red-rgb) / 85%);
+    --ytc-danger-soft: rgb(var(--ytc-red-rgb) / 22%);
+    --ytc-danger-hover: rgb(var(--ytc-red-rgb) / 30%);
+    --ytc-danger-glow: rgb(var(--ytc-red-rgb) / 45%);
+    --ytc-success: var(--ytc-green);
+    --ytc-success-soft: rgb(var(--ytc-green-rgb) / 20%);
+    --ytc-warning: var(--ytc-yellow);
+
+    /* Shadows — dark flavors tint with crust, Latte with text. */
+    --ytc-shadow: rgb(var(--ytc-shadow-rgb) / 80%);
+    --ytc-shadow-deep: rgb(var(--ytc-shadow-rgb) / 92%);
+}
+
+/* ----------------------------------------------------------------- flavors */
+
+/* Each flavor block must (re)define the complete palette: the default block
+ * below also matches :root on every page, so a token it defines would leak
+ * into every other flavor that does not override it. Later blocks win for
+ * equal specificity, which is why Latte/Frappé/Macchiato follow Mocha. */
+
+:root,
+[data-ytc-theme="mocha"] {
+    --ytc-shadow-rgb: var(--ytc-crust-rgb);
+
+    --ytc-rosewater: #f5e0dc;
+    --ytc-flamingo: #f2cdcd;
+    --ytc-pink: #f5c2e7;
+    --ytc-mauve: #cba6f7;
+    --ytc-red: #f38ba8;
+    --ytc-maroon: #eba0ac;
+    --ytc-peach: #fab387;
+    --ytc-yellow: #f9e2af;
+    --ytc-green: #a6e3a1;
+    --ytc-teal: #94e2d5;
+    --ytc-sky: #89dceb;
+    --ytc-sapphire: #74c7ec;
+    --ytc-blue: #89b4fa;
+    --ytc-lavender: #b4befe;
+    --ytc-text: #cdd6f4;
+    --ytc-subtext1: #bac2de;
+    --ytc-subtext0: #a6adc8;
+    --ytc-overlay2: #9399b2;
+    --ytc-overlay1: #7f849c;
+    --ytc-overlay0: #6c7086;
+    --ytc-surface2: #585b70;
+    --ytc-surface1: #45475a;
+    --ytc-surface0: #313244;
+    --ytc-base: #1e1e2e;
+    --ytc-mantle: #181825;
+    --ytc-crust: #11111b;
+
+    --ytc-text-rgb: 205 214 244;
+    --ytc-crust-rgb: 17 17 27;
+    --ytc-mantle-rgb: 24 24 37;
+    --ytc-sapphire-rgb: 116 199 236;
+    --ytc-mauve-rgb: 203 166 247;
+    --ytc-red-rgb: 243 139 168;
+    --ytc-green-rgb: 166 227 161;
+}
+
+[data-ytc-theme="latte"] {
+    --ytc-shadow-rgb: var(--ytc-text-rgb);
+    --ytc-on-accent: var(--ytc-base);
+
+    --ytc-rosewater: #dc8a78;
+    --ytc-flamingo: #dd7878;
+    --ytc-pink: #ea76cb;
+    --ytc-mauve: #8839ef;
+    --ytc-red: #d20f39;
+    --ytc-maroon: #e64553;
+    --ytc-peach: #fe640b;
+    --ytc-yellow: #df8e1d;
+    --ytc-green: #40a02b;
+    --ytc-teal: #179299;
+    --ytc-sky: #04a5e5;
+    --ytc-sapphire: #209fb5;
+    --ytc-blue: #1e66f5;
+    --ytc-lavender: #7287fd;
+    --ytc-text: #4c4f69;
+    --ytc-subtext1: #5c5f77;
+    --ytc-subtext0: #6c6f85;
+    --ytc-overlay2: #7c7f93;
+    --ytc-overlay1: #8c8fa1;
+    --ytc-overlay0: #9ca0b0;
+    --ytc-surface2: #acb0be;
+    --ytc-surface1: #bcc0cc;
+    --ytc-surface0: #ccd0da;
+    --ytc-base: #eff1f5;
+    --ytc-mantle: #e6e9ef;
+    --ytc-crust: #dce0e8;
+
+    --ytc-text-rgb: 76 79 105;
+    --ytc-crust-rgb: 220 224 232;
+    --ytc-mantle-rgb: 230 233 239;
+    --ytc-sapphire-rgb: 32 159 181;
+    --ytc-mauve-rgb: 136 57 239;
+    --ytc-red-rgb: 210 15 57;
+    --ytc-green-rgb: 64 160 43;
+}
+
+[data-ytc-theme="frappe"] {
+    --ytc-shadow-rgb: var(--ytc-crust-rgb);
+
+    --ytc-rosewater: #f2d5cf;
+    --ytc-flamingo: #eebebe;
+    --ytc-pink: #f4b8e4;
+    --ytc-mauve: #ca9ee6;
+    --ytc-red: #e78284;
+    --ytc-maroon: #ea999c;
+    --ytc-peach: #ef9f76;
+    --ytc-yellow: #e5c890;
+    --ytc-green: #a6d189;
+    --ytc-teal: #81c8be;
+    --ytc-sky: #99d1db;
+    --ytc-sapphire: #85c1dc;
+    --ytc-blue: #8caaee;
+    --ytc-lavender: #babbf1;
+    --ytc-text: #c6d0f5;
+    --ytc-subtext1: #b5bfe2;
+    --ytc-subtext0: #a5adce;
+    --ytc-overlay2: #949cbb;
+    --ytc-overlay1: #838ba7;
+    --ytc-overlay0: #737994;
+    --ytc-surface2: #626880;
+    --ytc-surface1: #51576d;
+    --ytc-surface0: #414559;
+    --ytc-base: #303446;
+    --ytc-mantle: #292c3c;
+    --ytc-crust: #232634;
+
+    --ytc-text-rgb: 198 208 245;
+    --ytc-crust-rgb: 35 38 52;
+    --ytc-mantle-rgb: 41 44 60;
+    --ytc-sapphire-rgb: 133 193 220;
+    --ytc-mauve-rgb: 202 158 230;
+    --ytc-red-rgb: 231 130 132;
+    --ytc-green-rgb: 166 209 137;
+}
+
+[data-ytc-theme="macchiato"] {
+    --ytc-shadow-rgb: var(--ytc-crust-rgb);
+
+    --ytc-rosewater: #f4dbd6;
+    --ytc-flamingo: #f0c6c6;
+    --ytc-pink: #f5bde6;
+    --ytc-mauve: #c6a0f6;
+    --ytc-red: #ed8796;
+    --ytc-maroon: #ee99a0;
+    --ytc-peach: #f5a97f;
+    --ytc-yellow: #eed49f;
+    --ytc-green: #a6da95;
+    --ytc-teal: #8bd5ca;
+    --ytc-sky: #91d7e3;
+    --ytc-sapphire: #7dc4e4;
+    --ytc-blue: #8aadf4;
+    --ytc-lavender: #b7bdf8;
+    --ytc-text: #cad3f5;
+    --ytc-subtext1: #b8c0e0;
+    --ytc-subtext0: #a5adcb;
+    --ytc-overlay2: #939ab7;
+    --ytc-overlay1: #8087a2;
+    --ytc-overlay0: #6e738d;
+    --ytc-surface2: #5b6078;
+    --ytc-surface1: #494d64;
+    --ytc-surface0: #363a4f;
+    --ytc-base: #24273a;
+    --ytc-mantle: #1e2030;
+    --ytc-crust: #181926;
+
+    --ytc-text-rgb: 202 211 245;
+    --ytc-crust-rgb: 24 25 38;
+    --ytc-mantle-rgb: 30 32 48;
+    --ytc-sapphire-rgb: 125 196 228;
+    --ytc-mauve-rgb: 198 160 246;
+    --ytc-red-rgb: 237 135 150;
+    --ytc-green-rgb: 166 218 149;
+}

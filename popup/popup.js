@@ -1,326 +1,337 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const hotkeyRecorder = document.getElementById('hotkeyRecorder');
-    const hotkeyRecorderText = document.getElementById('hotkeyRecorderText');
-    const backdropStyleSelect = document.getElementById('backdropStyle');
-    const overlayOpacityInput = document.getElementById('overlayOpacity');
-    const opacityValueSpan = document.getElementById('opacityValue');
-    const opacitySettingItem = document.getElementById('opacitySettingItem');
-    const ambientLightingCheck = document.getElementById('ambientLighting');
-    const ambientFullScreenCheck = document.getElementById('ambientFullScreen');
-    const ambientFullScreenItem = document.getElementById('ambientFullScreenItem');
-    const ambientQualitySelect = document.getElementById('ambientQuality');
-    const ambientQualityItem = document.getElementById('ambientQualityItem');
-    const ambientBlurInput = document.getElementById('ambientBlur');
-    const ambientBlurValueSpan = document.getElementById('ambientBlurValue');
-    const ambientBlurItem = document.getElementById('ambientBlurItem');
-    const ambientGlowInput = document.getElementById('ambientGlow');
-    const ambientGlowValueSpan = document.getElementById('ambientGlowValue');
-    const ambientGlowItem = document.getElementById('ambientGlowItem');
-    const autoPauseCheck = document.getElementById('autoPause');
-    const autoHideControlsCheck = document.getElementById('autoHideControls');
-    const rememberSpeedCheck = document.getElementById('rememberSpeed');
-    const directMiniPlayerCheck = document.getElementById('directMiniPlayer');
-    const directPiPCheck = document.getElementById('directPiP');
-    const altClickCheck = document.getElementById('altClickTrigger');
-    const middleClickCheck = document.getElementById('middleClickTrigger');
-    const autoTheaterCheck = document.getElementById('autoTheater');
-    const showIndicatorCheck = document.getElementById('showIndicator');
-
-    let currentHotkey = ' ';
-    let isRecordingKey = false;
-
-    function formatKeyDisplay(key) {
-        if (!key) return 'Space';
-        if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
-        return key.toUpperCase();
-    }
-
-    function updateHotkeyDisplay(key) {
-        currentHotkey = key || ' ';
-        const display = formatKeyDisplay(currentHotkey);
-        if (hotkeyRecorderText) {
-            hotkeyRecorderText.textContent = display;
-        }
-        document.querySelectorAll('.hotkey-kbd').forEach(el => {
-            el.textContent = display;
-        });
-    }
-
-    function updateOpacityUI() {
-        const val = overlayOpacityInput.value;
-        opacityValueSpan.textContent = `${val}%`;
-
-        if (backdropStyleSelect.value === 'oled') {
-            opacitySettingItem.classList.add('disabled');
-        } else {
-            opacitySettingItem.classList.remove('disabled');
-        }
-    }
-
-    function updateAmbientUI() {
-        const isAmbient = ambientLightingCheck.checked;
-        if (!isAmbient) {
-            ambientFullScreenItem.classList.add('disabled');
-            ambientFullScreenCheck.disabled = true;
-            ambientQualityItem.classList.add('disabled');
-            ambientQualitySelect.disabled = true;
-            ambientBlurItem.classList.add('disabled');
-            ambientBlurInput.disabled = true;
-            ambientGlowItem.classList.add('disabled');
-            ambientGlowInput.disabled = true;
-        } else {
-            ambientFullScreenItem.classList.remove('disabled');
-            ambientFullScreenCheck.disabled = false;
-            ambientQualityItem.classList.remove('disabled');
-            ambientQualitySelect.disabled = false;
-            ambientBlurItem.classList.remove('disabled');
-            ambientBlurInput.disabled = false;
-            ambientGlowItem.classList.remove('disabled');
-            ambientGlowInput.disabled = false;
-        }
-        ambientBlurValueSpan.textContent = `${ambientBlurInput.value}px`;
-        ambientGlowValueSpan.textContent = `${ambientGlowInput.value}%`;
-    }
+/**
+ * Popup module — settings UI for the extension popup.
+ *
+ * The form is described once in `FIELDS`, which drives loading, saving and
+ * event wiring. Adding a setting means adding one entry.
+ */
+(() => {
+    'use strict';
 
     const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chrome;
 
-    function getSettings(callback) {
-        try {
-            api.storage.sync.get(['cinemaSettings'], (result) => {
-                if (callback) callback(result || {});
-            });
-        } catch (e) {
-            console.error('[Cinema Mode] Storage get error:', e);
-            if (callback) callback({});
-        }
+    const SETTINGS_KEY = 'cinemaSettings';
+    const DEFAULT_HOTKEY = ' ';
+
+    /** Flavors shipped by styles/00-themes.css; anything else falls back. */
+    const THEMES = ['latte', 'frappe', 'macchiato', 'mocha'];
+    const DEFAULT_THEME = 'mocha';
+
+    function applyTheme(themeId) {
+        document.documentElement.setAttribute(
+            'data-ytc-theme',
+            THEMES.includes(themeId) ? themeId : DEFAULT_THEME
+        );
     }
 
-    function saveSettingsToStorage(settings, callback) {
+    /** Show the manifest version so the popup cannot drift from a release. */
+    function applyVersion() {
         try {
-            api.storage.sync.set({ cinemaSettings: settings }, () => {
-                if (callback) callback();
-            });
-        } catch (e) {
-            console.error('[Cinema Mode] Storage set error:', e);
-            if (callback) callback();
-        }
+            const version = api.runtime.getManifest?.().version;
+            const el = document.getElementById('popupVersion');
+            if (version && el) el.textContent = `v${version}`;
+        } catch (_) {}
     }
 
-    getSettings((result) => {
-        let settings = (result && result.cinemaSettings) || {};
+    // Apply the saved flavor before the settings form loads so the popup does
+    // not flash the default theme on open.
+    try {
+        api.storage.sync.get([SETTINGS_KEY], (result) => {
+            applyTheme(result && result[SETTINGS_KEY] && result[SETTINGS_KEY].theme);
+        });
+    } catch (_) {}
 
-        // Migrate old default settings if user hasn't explicitly customized them
-        if (settings.hotkey === 'h' && settings.directMiniPlayer === true) {
-            settings = {
-                ...settings,
-                hotkey: ' ',
-                autoHideControls: true,
-                rememberSpeed: true,
-                directMiniPlayer: false,
-                directPiP: false
-            };
-            saveSettings();
-        }
+    /** Blur radius presets implied by each named ambient quality. */
+    const QUALITY_BLUR = { high: 80, medium: 40, low: 0 };
 
-        if (settings.hotkey) {
-            updateHotkeyDisplay(settings.hotkey);
-        } else {
-            updateHotkeyDisplay(' ');
-        }
+    /** Reverse lookup: blur radius -> quality name. */
+    const BLUR_QUALITY = { 80: 'high', 40: 'medium', 0: 'low' };
 
-        if (settings.backdropStyle) {
-            backdropStyleSelect.value = settings.backdropStyle;
-        }
-        if (settings.overlayOpacity !== undefined) {
-            overlayOpacityInput.value = settings.overlayOpacity;
-        }
-        if (settings.ambientLighting !== undefined) {
-            ambientLightingCheck.checked = settings.ambientLighting;
-        }
-        if (settings.ambientFullScreen !== undefined) {
-            ambientFullScreenCheck.checked = settings.ambientFullScreen;
-        } else {
-            ambientFullScreenCheck.checked = true;
-        }
-        if (settings.ambientGlow !== undefined) {
-            ambientGlowInput.value = settings.ambientGlow;
-        } else {
-            ambientGlowInput.value = 75;
-        }
-        if (settings.ambientQuality !== undefined) {
-            ambientQualitySelect.value = settings.ambientQuality;
-        } else {
-            ambientQualitySelect.value = 'high';
-        }
-        if (settings.ambientBlur !== undefined) {
-            ambientBlurInput.value = settings.ambientBlur;
-        } else {
-            ambientBlurInput.value = 80;
-        }
-        if (settings.autoPause !== undefined) {
-            autoPauseCheck.checked = settings.autoPause;
-        }
-        if (settings.autoHideControls !== undefined) {
-            autoHideControlsCheck.checked = settings.autoHideControls;
-        } else {
-            autoHideControlsCheck.checked = true;
-        }
-        if (settings.rememberSpeed !== undefined) {
-            rememberSpeedCheck.checked = settings.rememberSpeed;
-        } else {
-            rememberSpeedCheck.checked = true;
-        }
-        if (settings.directMiniPlayer !== undefined) {
-            directMiniPlayerCheck.checked = settings.directMiniPlayer;
-        } else {
-            directMiniPlayerCheck.checked = false;
-        }
-        if (settings.directPiP !== undefined) {
-            directPiPCheck.checked = settings.directPiP;
-        } else {
-            directPiPCheck.checked = false;
-        }
-        if (settings.altClickTrigger !== undefined) {
-            altClickCheck.checked = settings.altClickTrigger;
-        }
-        if (settings.middleClickTrigger !== undefined) {
-            middleClickCheck.checked = settings.middleClickTrigger;
-        }
-        if (settings.autoTheater !== undefined) {
-            autoTheaterCheck.checked = settings.autoTheater;
-        }
-        if (settings.showIndicator !== undefined) {
-            showIndicatorCheck.checked = settings.showIndicator;
-        }
+    /** Keys ignored by the key recorder (they can't stand alone as a hotkey). */
+    const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'];
 
-        updateOpacityUI();
-        updateAmbientUI();
-    });
+    const formatKeyDisplay = (key) => {
+        if (!key) return 'Space';
+        if (key === ' ' || key.toLowerCase() === 'space') return 'Space';
+        return key.toUpperCase();
+    };
 
-    function saveSettings() {
-        const settings = {
-            hotkey: currentHotkey,
-            backdropStyle: backdropStyleSelect.value,
-            overlayOpacity: parseInt(overlayOpacityInput.value, 10),
-            ambientLighting: ambientLightingCheck.checked,
-            ambientFullScreen: ambientFullScreenCheck.checked,
-            ambientQuality: ambientQualitySelect.value,
-            ambientBlur: parseInt(ambientBlurInput.value, 10),
-            ambientGlow: parseInt(ambientGlowInput.value, 10),
-            autoPause: autoPauseCheck.checked,
-            autoHideControls: autoHideControlsCheck.checked,
-            rememberSpeed: rememberSpeedCheck.checked,
-            directMiniPlayer: directMiniPlayerCheck.checked,
-            directPiP: directPiPCheck.checked,
-            altClickTrigger: altClickCheck.checked,
-            middleClickTrigger: middleClickCheck.checked,
-            autoTheater: autoTheaterCheck.checked,
-            showIndicator: showIndicatorCheck.checked
+    /** The retired default profile (hotkey "h" + direct mini-player) maps to today's defaults. */
+    function migrateLegacyDefaults(settings) {
+        if (settings.hotkey !== 'h' || settings.directMiniPlayer !== true) return null;
+        return {
+            ...settings,
+            hotkey: DEFAULT_HOTKEY,
+            autoHideControls: true,
+            rememberSpeed: true,
+            directMiniPlayer: false,
+            directPiP: false
         };
+    }
 
-        updateHotkeyDisplay(currentHotkey);
-        updateOpacityUI();
-        updateAmbientUI();
-
-        saveSettingsToStorage(settings, () => {
-            console.log('[Cinema Mode] Settings saved');
+    function readSettings() {
+        return new Promise((resolve) => {
+            try {
+                api.storage.sync.get([SETTINGS_KEY], (result) => resolve((result && result[SETTINGS_KEY]) || {}));
+            } catch (err) {
+                console.error('[Cinema Mode] Storage get error:', err);
+                resolve({});
+            }
         });
     }
 
-    // Hotkey Recorder
-    hotkeyRecorder.addEventListener('click', () => {
-        if (isRecordingKey) {
-            stopRecording(false);
-            return;
-        }
-        isRecordingKey = true;
-        hotkeyRecorder.classList.add('recording');
-        const hint = hotkeyRecorder.querySelector('.hotkey-record-hint');
-        if (hint) hint.textContent = 'Press key (ESC cancels)';
-    });
-
-    function stopRecording(cancelled) {
-        isRecordingKey = false;
-        hotkeyRecorder.classList.remove('recording');
-        const hint = hotkeyRecorder.querySelector('.hotkey-record-hint');
-        if (hint) hint.textContent = 'Click to change';
+    function writeSettings(settings) {
+        return new Promise((resolve) => {
+            try {
+                api.storage.sync.set({ [SETTINGS_KEY]: settings }, resolve);
+            } catch (err) {
+                console.error('[Cinema Mode] Storage set error:', err);
+                resolve();
+            }
+        });
     }
 
-    window.addEventListener('keydown', (e) => {
-        if (!isRecordingKey) return;
+    // ------------------------------------------------------------ field list
 
-        e.preventDefault();
-        e.stopPropagation();
+    /**
+     * Field descriptors.
+     *   input      element id
+     *   default    value used when storage has nothing
+     *   read       pull the value out of the DOM
+     *   write      push a stored value into the DOM
+     *   onChange   extra work before a change is saved
+     *   onInput    extra work on every keystroke/drag
+     */
+    const FIELDS = [
+        {
+            key: 'theme', input: 'theme', default: DEFAULT_THEME,
+            read: el => el.value, write: (el, v) => { el.value = v; },
+            onChange: (ui) => ui.applyThemeField()
+        },
+        {
+            key: 'backdropStyle', input: 'backdropStyle', default: 'glass',
+            read: el => el.value, write: (el, v) => { el.value = v; }
+        },
+        {
+            key: 'overlayOpacity', input: 'overlayOpacity', default: 90, type: 'number',
+            read: el => parseInt(el.value, 10), write: (el, v) => { el.value = v; }
+        },
+        {
+            key: 'ambientLighting', input: 'ambientLighting', default: true,
+            read: el => el.checked, write: (el, v) => { el.checked = v; }
+        },
+        {
+            key: 'ambientFullScreen', input: 'ambientFullScreen', default: true, requiresAmbient: true,
+            read: el => el.checked, write: (el, v) => { el.checked = v; }
+        },
+        {
+            key: 'ambientQuality', input: 'ambientQuality', default: 'high', requiresAmbient: true,
+            read: el => el.value, write: (el, v) => { el.value = v; },
+            onChange: (ui) => ui.applyQualityPreset()
+        },
+        {
+            key: 'ambientBlur', input: 'ambientBlur', default: 80, type: 'number', requiresAmbient: true,
+            read: el => parseInt(el.value, 10), write: (el, v) => { el.value = v; },
+            onInput: (ui) => ui.syncQualityToBlur()
+        },
+        {
+            key: 'ambientGlow', input: 'ambientGlow', default: 75, type: 'number', requiresAmbient: true,
+            read: el => parseInt(el.value, 10), write: (el, v) => { el.value = v; }
+        },
+        { key: 'autoPause', input: 'autoPause', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'autoHideControls', input: 'autoHideControls', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'rememberSpeed', input: 'rememberSpeed', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'rememberQuality', input: 'rememberQuality', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; }, optional: true },
+        { key: 'directMiniPlayer', input: 'directMiniPlayer', default: false, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'directPiP', input: 'directPiP', default: false, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'altClickTrigger', input: 'altClickTrigger', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'middleClickTrigger', input: 'middleClickTrigger', default: false, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'autoTheater', input: 'autoTheater', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'showIndicator', input: 'showIndicator', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } }
+    ];
 
-        if (e.key === 'Escape') {
-            stopRecording(true);
-            return;
+    // ------------------------------------------------------------------- UI
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyVersion();
+        const ui = createUi();
+
+        ui.load();
+        ui.initHotkeyRecorder(() => ui.save());
+    });
+
+    function createUi() {
+        const els = {};
+        for (const field of FIELDS) {
+            if (!field.optional || document.getElementById(field.input)) {
+                els[field.key] = document.getElementById(field.input);
+            }
         }
 
-        // Ignore modifier-only presses
-        if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab'].includes(e.key)) {
-            return;
+        const ui = {
+            currentHotkey: DEFAULT_HOTKEY,
+            isRecordingKey: false,
+
+            get hotkeyRecorder() { return document.getElementById('hotkeyRecorder'); },
+            get hotkeyRecorderText() { return document.getElementById('hotkeyRecorderText'); },
+            get opacityValue() { return document.getElementById('opacityValue'); },
+            get ambientBlurValue() { return document.getElementById('ambientBlurValue'); },
+            get ambientGlowValue() { return document.getElementById('ambientGlowValue'); }
+        };
+
+        // -------------------------------------------------------- presentation
+
+        ui.updateHotkeyDisplay = (key) => {
+            ui.currentHotkey = key || DEFAULT_HOTKEY;
+            const display = formatKeyDisplay(ui.currentHotkey);
+            if (ui.hotkeyRecorderText) ui.hotkeyRecorderText.textContent = display;
+            document.querySelectorAll('.hotkey-kbd').forEach(el => { el.textContent = display; });
+        };
+
+        ui.updateOpacityUI = () => {
+            ui.opacityValue.textContent = `${els.overlayOpacity.value}%`;
+            setItemDisabled('opacitySettingItem', els.backdropStyle.value === 'oled');
+        };
+
+        /** Ambient sub-settings grey out whenever ambient lighting is off. */
+        ui.updateAmbientUI = () => {
+            const enabled = els.ambientLighting.checked;
+            for (const field of FIELDS) {
+                if (!field.requiresAmbient) continue;
+                setItemDisabled(`${field.input}Item`, !enabled);
+                if (els[field.key]) els[field.key].disabled = !enabled;
+            }
+            ui.ambientBlurValue.textContent = `${els.ambientBlur.value}px`;
+            ui.ambientGlowValue.textContent = `${els.ambientGlow.value}%`;
+        };
+
+        function setItemDisabled(itemId, disabled) {
+            document.getElementById(itemId)?.classList.toggle('disabled', disabled);
         }
 
-        let recordedKey = e.key;
-        if (recordedKey === ' ' || e.code === 'Space') {
-            recordedKey = ' ';
-        } else {
-            recordedKey = recordedKey.toLowerCase();
+        /** Named quality presets move the blur slider. */
+        ui.applyQualityPreset = () => {
+            const preset = QUALITY_BLUR[els.ambientQuality.value];
+            if (preset === undefined) return;
+            els.ambientBlur.value = preset;
+            ui.ambientBlurValue.textContent = `${preset}px`;
+        };
+
+        /** Mirror the theme dropdown onto the document so tokens switch live. */
+        ui.applyThemeField = () => {
+            if (els.theme) applyTheme(els.theme.value);
+        };
+
+        /** Dragging the blur slider renames the quality to "custom". */
+        ui.syncQualityToBlur = () => {
+            const blur = parseInt(els.ambientBlur.value, 10);
+            els.ambientQuality.value = BLUR_QUALITY[blur] ?? 'custom';
+            ui.ambientBlurValue.textContent = `${blur}px`;
+        };
+
+        // --------------------------------------------------------- load/save
+
+        ui.load = async () => {
+            const settings = await readSettings();
+            const migrated = migrateLegacyDefaults(settings);
+            const effective = migrated || settings;
+
+            // The migration is written back before the form is filled in, so it
+            // persists today's defaults for the retired profile.
+            if (migrated) await ui.save();
+
+            ui.updateHotkeyDisplay(effective.hotkey);
+
+            for (const field of FIELDS) {
+                const el = els[field.key];
+                if (!el) continue;
+                const value = effective[field.key] !== undefined ? effective[field.key] : field.default;
+                field.write(el, value);
+            }
+
+            ui.updateOpacityUI();
+            ui.updateAmbientUI();
+            ui.applyThemeField();
+        };
+
+        ui.save = async () => {
+            const settings = { hotkey: ui.currentHotkey };
+            for (const field of FIELDS) {
+                const el = els[field.key];
+                settings[field.key] = el ? field.read(el) : field.default;
+            }
+
+            ui.updateHotkeyDisplay(ui.currentHotkey);
+            ui.updateOpacityUI();
+            ui.updateAmbientUI();
+
+            await writeSettings(settings);
+            console.log('[Cinema Mode] Settings saved');
+        };
+
+        // ----------------------------------------------------- hotkey recorder
+
+        ui.initHotkeyRecorder = (onRecorded) => {
+            const recorder = ui.hotkeyRecorder;
+            const hint = recorder.querySelector('.hotkey-record-hint');
+
+            const stopRecording = () => {
+                ui.isRecordingKey = false;
+                recorder.classList.remove('recording');
+                if (hint) hint.textContent = 'Click to change';
+            };
+
+            recorder.addEventListener('click', () => {
+                if (ui.isRecordingKey) {
+                    stopRecording();
+                    return;
+                }
+                ui.isRecordingKey = true;
+                recorder.classList.add('recording');
+                if (hint) hint.textContent = 'Press key (ESC cancels)';
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (!ui.isRecordingKey) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (e.key === 'Escape') {
+                    stopRecording();
+                    return;
+                }
+                if (MODIFIER_KEYS.includes(e.key)) return;
+
+                ui.currentHotkey = (e.key === ' ' || e.code === 'Space') ? DEFAULT_HOTKEY : e.key.toLowerCase();
+                stopRecording();
+                onRecorded();
+            }, true);
+        };
+
+        // ------------------------------------------------------- event wiring
+
+        for (const field of FIELDS) {
+            const el = els[field.key];
+            if (!el) continue;
+
+            el.addEventListener('change', () => {
+                if (field.onChange) field.onChange(ui);
+                ui.save();
+            });
+            if (field.onInput) el.addEventListener('input', () => field.onInput(ui));
         }
 
-        currentHotkey = recordedKey;
-        stopRecording(false);
-        saveSettings();
-    }, true);
+        els.overlayOpacity.addEventListener('input', () => {
+            ui.opacityValue.textContent = `${els.overlayOpacity.value}%`;
+        });
+        els.ambientGlow.addEventListener('input', () => {
+            ui.ambientGlowValue.textContent = `${els.ambientGlow.value}%`;
+        });
+        els.ambientLighting.addEventListener('change', () => {
+            ui.updateAmbientUI();
+            ui.save();
+        });
 
-    backdropStyleSelect.addEventListener('change', saveSettings);
-    overlayOpacityInput.addEventListener('input', () => {
-        opacityValueSpan.textContent = `${overlayOpacityInput.value}%`;
-    });
-    overlayOpacityInput.addEventListener('change', saveSettings);
-    ambientLightingCheck.addEventListener('change', () => {
-        updateAmbientUI();
-        saveSettings();
-    });
-    ambientFullScreenCheck.addEventListener('change', saveSettings);
-    ambientQualitySelect.addEventListener('change', () => {
-        const val = ambientQualitySelect.value;
-        if (val === 'high') {
-            ambientBlurInput.value = 80;
-        } else if (val === 'medium') {
-            ambientBlurInput.value = 40;
-        } else if (val === 'low') {
-            ambientBlurInput.value = 0;
-        }
-        ambientBlurValueSpan.textContent = `${ambientBlurInput.value}px`;
-        saveSettings();
-    });
-    ambientBlurInput.addEventListener('input', () => {
-        const blur = parseInt(ambientBlurInput.value, 10);
-        if (blur === 80) {
-            ambientQualitySelect.value = 'high';
-        } else if (blur === 40) {
-            ambientQualitySelect.value = 'medium';
-        } else if (blur === 0) {
-            ambientQualitySelect.value = 'low';
-        } else {
-            ambientQualitySelect.value = 'custom';
-        }
-        ambientBlurValueSpan.textContent = `${blur}px`;
-    });
-    ambientBlurInput.addEventListener('change', saveSettings);
-    ambientGlowInput.addEventListener('input', () => {
-        ambientGlowValueSpan.textContent = `${ambientGlowInput.value}%`;
-    });
-    ambientGlowInput.addEventListener('change', saveSettings);
-    autoPauseCheck.addEventListener('change', saveSettings);
-    autoHideControlsCheck.addEventListener('change', saveSettings);
-    rememberSpeedCheck.addEventListener('change', saveSettings);
-    directMiniPlayerCheck.addEventListener('change', saveSettings);
-    directPiPCheck.addEventListener('change', saveSettings);
-    altClickCheck.addEventListener('change', saveSettings);
-    middleClickCheck.addEventListener('change', saveSettings);
-    autoTheaterCheck.addEventListener('change', saveSettings);
-    showIndicatorCheck.addEventListener('change', saveSettings);
-});
+        return ui;
+    }
+})();

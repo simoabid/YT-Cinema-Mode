@@ -9,7 +9,7 @@
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
 [![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 **A beautiful, feature-packed browser extension that lets you watch any YouTube video in a stunning cinema-style overlay without leaving the current page.**
 
-[✨ Features](#-features) • [📦 Installation](#-installation--loading) • [🎯 Usage](#-usage) • [⚙️ Settings](#️-settings) • [⌨️ Shortcuts](#️-keyboard-shortcuts) • [🌐 Browser Support](#-browser-support) • [🤝 Contributing](#-contributing)
+[✨ Features](#-features) • [📦 Installation](#-installation--loading) • [🎯 Usage](#-usage) • [⚙️ Settings](#-settings) • [⌨️ Shortcuts](#-keyboard-shortcuts) • [🌐 Browser Support](#-browser-support) • [🤝 Contributing](#-contributing)
 
 ---
 
@@ -28,11 +28,12 @@
 
 - [✨ Features](#-features)
 - [📦 Installation & Loading](#-installation--loading)
-- [🛠️ Build & Packaging](#️-build--packaging)
+- [🛠️ Build & Packaging](#-build--packaging)
+- [🧪 Testing](#-testing)
 - [🎯 Usage](#-usage)
-- [⚙️ Settings](#️-settings)
-- [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
-- [🛠️ Tech Stack](#️-tech-stack)
+- [⚙️ Settings](#-settings)
+- [⌨️ Keyboard Shortcuts](#-keyboard-shortcuts)
+- [🛠️ Tech Stack](#-tech-stack)
 - [🔧 Technical Architecture](#-technical-architecture)
 - [🌐 Browser Support](#-browser-support)
 - [🤝 Contributing](#-contributing)
@@ -49,7 +50,7 @@
 <td width="50%" valign="top">
 
 ### 🎥 **Hover & Watch**
-Hover over any video thumbnail and press your configured hotkey (default `H`) or `Alt+H` to immediately open cinema mode.
+Hover over any video thumbnail and press your configured hotkey (default <kbd>Space</kbd>), or press <kbd>Alt</kbd>+<kbd>H</kbd> as a global toggle, to immediately open cinema mode.
 
 ### 📌 **Draggable & Resizable Mini-Player**
 Dock the player into a floating desktop window (`D`). Resize from any edge/corner or corner grip with smooth hardware acceleration. Includes edge snapping and position memory.
@@ -73,7 +74,7 @@ Capture uncompressed video frames (`S`) with shutter-flash feedback. Use `Shift+
 Speed pill with dropdown menu (`0.25x` to `3x`) and keyboard step controls (`[` / `]`). Optionally persist speed across videos.
 
 ### 🕶️ **Backdrop Customizer**
-Switch between modern **Frosted Glass** (with 50%–100% opacity slider) and pure **OLED Blackout** mode.
+Switch between modern **Frosted Glass** (with 50%–100% opacity slider) and pure **OLED Blackout** mode — and reskin every surface of the extension with any of the four **Catppuccin** flavors (Latte, Frappé, Macchiato, Mocha).
 
 ### 🔊 **Glass Volume HUD**
 Smooth volume adjustment (`↑` / `↓`) and instant mute/unmute (`M`) with a real-time glass HUD overlay.
@@ -107,7 +108,7 @@ Built-in PiP mode, optional Direct PiP launching, and smart auto-pause/resume fo
 </details>
 
 <details>
-<summary><b>🦊 Mozilla Firefox (Firefox 109+, ESR 115, & 121+)</b></summary>
+<summary><b>🦊 Mozilla Firefox (109+)</b></summary>
 
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on...**
@@ -138,6 +139,35 @@ This generates:
 
 ---
 
+## 🧪 Testing
+
+The extension ships with a zero-dependency test suite that runs the real content
+modules against a small DOM/browser mock — no bundler, no headless browser, no
+`npm install` (there are no runtime dependencies at all).
+
+```bash
+npm test       # run the suite
+npm run lint   # manifest / namespace / CSS cross-checks
+npm run verify # suite + mutation check (see below)
+node test/run.js quality   # filter by name
+```
+
+`test/mutation-check.py` reverts each bug fix in turn and asserts the suite goes
+red, which is what proves the tests are guarding the fixes rather than passing
+vacuously.
+
+`test/lint.js` checks the invariants that caused real bugs here:
+
+- every file a manifest lists exists, and no source file is left unlisted
+- both manifests agree with `package.json` on the version
+- the Chrome manifest requests no permission MV3 forbids
+- no `YTC.*` member is referenced that is never defined
+- every class applied from JS has a rule in `content/styles/`
+- every `var(--x)` read is either defined in CSS or set from JS
+- no exported namespace member is dead
+
+---
+
 ## 🎯 Usage
 
 <div align="center">
@@ -145,7 +175,7 @@ This generates:
 ```mermaid
 graph LR
     A[Go to YouTube] --> B[Hover or Alt+Click]
-    B --> C[Press Hotkey 'H']
+    B --> C[Press Hotkey 'Space']
     C --> D[Cinema Mode 🎬]
     D --> E[Dock Mini-Player 'D' 📌]
     D --> F[Screenshot 'S' 📸]
@@ -156,8 +186,8 @@ graph LR
 
 1. 🌐 Navigate to **YouTube** (youtube.com)
 2. 🖱️ **Hover** over any video thumbnail (or `Alt + Click` directly)
-3. 👀 You'll see a small red **"Press H" indicator**
-4. ⌨️ Press your hotkey (default `H`) to open Cinema Mode
+3. 👀 You'll see a small red **"Press Space" indicator**
+4. ⌨️ Press your hotkey (default <kbd>Space</kbd>) to open Cinema Mode
 5. 🎮 **Control your playback**:
    - Press `D` to dock into a floating mini-player and drag it anywhere
    - Press `S` for screenshot, or `Shift+S` to copy frame to clipboard
@@ -173,20 +203,23 @@ Click the extension icon 🧩 in your toolbar to customize features:
 
 | Setting | Description | Default |
 |:---|:---|:---:|
-| **🔑 Cinema Hotkey** | Interactive recorder to assign any key | `H` |
+| **🐱 Theme** | Catppuccin flavor for the overlay, menus and popup (Mocha, Macchiato, Frappé, Latte) | `Mocha` |
+| **🔑 Cinema Hotkey** | Interactive recorder to assign any key | `Space` |
 | **🎨 Backdrop Style** | Choose between Frosted Glass and OLED Blackout | `Frosted Glass` |
 | **🌓 Backdrop Opacity** | Adjust background darkness (50% to 100%) | `90%` |
 | **✨ Ambient Lighting** | Reactive Ambilight glow matching video colors | `ON` |
 | **🌌 Full Screen Glow** | Toggle full-viewport aura vs player container halo | `ON` |
 | **💡 Glow Intensity** | Adjust glow intensity and blur spread (20% to 100%) | `75%` |
+| **🔮 Glow Quality** | Preset for the glow blur radius (Low / Medium / High) | `High` |
 | **⏸️ Auto-Pause Background** | Automatically pause and resume existing tab videos | `ON` |
-| **🕶️ Auto-Hide Controls** | Fade out controls and cursor after 2.5s of inactivity | `OFF` |
-| **⏱️ Remember Speed** | Persist chosen playback speed across all videos | `OFF` |
-| **📌 Direct Mini-Player** | Open straight into mini-player via `Ctrl + Hotkey` | `ON` |
+| **🕶️ Auto-Hide Controls** | Fade out controls and cursor after a short idle delay | `ON` |
+| **⏱️ Remember Speed** | Persist chosen playback speed across all videos | `ON` |
+| **🎞️ Remember Quality** | Persist the chosen video quality for future videos | `ON` |
+| **📌 Direct Mini-Player** | Open straight into mini-player via `Ctrl + Hotkey` | `OFF` |
 | **🖼️ Direct PiP** | Open directly in native Picture-in-Picture window | `OFF` |
 | **🖱️ Alt + Click Trigger** | Instantly open thumbnail in cinema mode via Alt+Click | `ON` |
 | **🖱️ Middle-Click Trigger** | Open thumbnail via middle mouse click | `OFF` |
-| **🎭 Auto Theater Mode** | Automatically toggle theater mode in the player | `ON` |
+| **🎭 Auto Theater Mode** | Toggle theater mode in the watch-page fallback player (normal embeds already fill the overlay) | `ON` |
 | **👁️ Show Indicator** | Show badge indicator on hovered thumbnails | `ON` |
 
 ---
@@ -202,6 +235,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 | <kbd>D</kbd> | 📌 Toggle Mini-Player / Corner Dock mode (draggable & resizable) |
 | <kbd>S</kbd> | 📸 Capture native-res screenshot (Download PNG) |
 | <kbd>Shift</kbd> + <kbd>S</kbd> | 📋 Copy native-res screenshot directly to clipboard |
+| <kbd>Q</kbd> | 🎚️ Toggle the video quality menu |
 | <kbd>[</kbd> / <kbd>]</kbd> *(or <kbd><</kbd> / <kbd>></kbd>)* | ⏱️ Decrease / Increase playback speed |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | 🔊 Volume up / down (±5% with glass HUD) |
 | <kbd>M</kbd> | 🔇 Toggle mute / unmute |
@@ -233,14 +267,64 @@ Click the extension icon 🧩 in your toolbar to customize features:
 
 ## 🔧 Technical Architecture
 
+- **Zero-Build Module System**: The content script is split into small, single-purpose files that the manifest loads **in order** via `content_scripts[].js`. Everything shares one isolated-world namespace (`YTC`), so there is no bundler, no transpiler and no extra dependencies — you can edit a file, hit reload in `chrome://extensions`, and see the change.
+- **Tokenized Catppuccin Theming**: every colour the extension paints resolves through semantic `--ytc-*` custom properties defined once in `content/styles/00-themes.css`. The flavor is just a `data-ytc-theme` attribute on the document root, so a new theme is one palette block — no component stylesheet changes.
 - **Cross-Browser Universal API Bridge**: Unified wrapper dynamically routing between `chrome.*` and `browser.*` APIs.
 - **Sandboxed Full YouTube Player**: Embeds the authentic YouTube watch page inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
-- **Hardware-Accelerated Ambient Engine**: Low-overhead HTML5 canvas with `willReadFrequently` optimization that extracts dynamic edge hues to render responsive CSS glow filters.
+- **Hardware-Accelerated Ambient Engine**: Low-overhead HTML5 canvas that samples the playing video into a 32×18 buffer and renders responsive CSS glow filters from it.
 - **Firefox Xray Vision Security Unwrapping**: Content scripts access `movie_player.wrappedJSObject` to cleanly interface with YouTube playback methods across Firefox boundaries.
 - **Dual Manifest Configuration**:
   - `manifest.json`: Universal MV3 with background service worker for Chromium browsers.
   - `manifest.firefox.json`: Firefox MV3 with background scripts and Gecko compatibility.
 - **Settings Sync**: Seamless settings synchronization across browser sessions via `storage.sync`.
+
+### 📁 Project Layout
+
+```
+.
+├── manifest.json / manifest.firefox.json   Extension manifests (list the module load order)
+├── background/
+│   └── background.js                       Header rules, settings seeding, hotkey command
+├── content/
+│   ├── content.js                          Bootstrap: page-level triggers + hover badge
+│   ├── modules/
+│   │   ├── core.js                         Namespace, settings, shared state, storage
+│   │   ├── theme.js                        Catppuccin flavor selection (data-ytc-theme)
+│   │   ├── icons.js                        Every inline SVG used by the overlay
+│   │   ├── video.js                        URL / title / aspect-ratio helpers (pure)
+│   │   ├── layout.js                       Container sizing, resizing, scroll lock
+│   │   ├── player.js                       Everything that reaches into the embed iframe
+│   │   ├── overlay.js                      Overlay DOM construction, direct PiP
+│   │   ├── launcher.js                     "What to open" decisions for every trigger
+│   │   ├── controller.js                   Per-overlay context + wiring of all controls
+│   │   └── controls/                       One feature per file
+│   │       ├── toast.js  autohide.js  speed.js  quality.js
+│   │       ├── transport.js  ambient.js  screenshot.js
+│   │       └── dock.js  navigation.js  keyboard.js
+│   └── styles/                             Stylesheet split into 8 ordered partials
+│       ├── 00-themes.css                   Catppuccin palette + semantic tokens
+│       ├── 01-overlay.css   02-ambient.css   03-docked.css   04-shorts.css
+│       └── 05-feedback.css  06-menus.css     07-page.css
+├── popup/                                  Settings UI
+├── icons/                                  Extension icons (+ icon-source.png)
+├── docs/                                   Historical audit notes
+├── test/                                   Zero-dependency test suite
+│   ├── dom.js                              Minimal DOM/browser mock
+│   ├── harness.js                          Loads the real modules into that mock
+│   ├── run.js                              Test runner
+│   ├── lint.js                             Project cross-checks
+│   └── *.test.js                           The tests
+└── build.js
+```
+
+### 🧩 How the overlay works
+
+1. A **trigger** (hotkey, `Alt+Click`, middle-click, hover badge, `Alt+H` command) calls `YTC.launcher`.
+2. The launcher resolves the video id, title, timestamp and aspect ratio, then calls `YTC.overlay.createOverlay(...)`.
+3. `createOverlay` builds the DOM and hands everything to `YTC.controller.setupOverlayEvents`.
+4. The controller creates one **control** per feature (speed, quality, dock, keyboard, …), all sharing a single context object, and publishes the `overlay._*` hooks that the player bootstrap, settings and fallbacks call back into.
+
+Each control is self-contained: it owns its state, its DOM listeners and its own teardown, so a change to (say) the quality selector never touches the docking code.
 
 ---
 
@@ -251,7 +335,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 | Browser | Support | Version |
 |:---|:---:|:---|
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" width="24"> **Google Chrome** | ✅ Full Support | Manifest V3 (Latest) |
-| <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" width="24"> **Mozilla Firefox** | ✅ Full Support | Firefox 109+, ESR 115+, 121+ |
+| <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" width="24"> **Mozilla Firefox** | ✅ Full Support | Firefox 109+ |
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" width="24"> **Microsoft Edge** | ✅ Full Support | Chromium-based |
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/brave/brave_48x48.png" width="24"> **Brave** | ✅ Full Support | Chromium-based |
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/opera/opera_48x48.png" width="24"> **Opera** | ✅ Full Support | Chromium-based |

@@ -1,0 +1,266 @@
+/* Playback speed and video quality selectors + dropdown menus. */
+/* Playback Speed Selector & Dropdown Menu */
+.yt-cinema-speed-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.yt-cinema-speed-pill {
+    height: 36px;
+    min-width: 44px;
+    padding: 0 10px;
+    background: var(--ytc-fill);
+    border: 1px solid var(--ytc-border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--ytc-text-secondary);
+    user-select: none;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yt-cinema-speed-pill:hover {
+    background: var(--ytc-fill-hover);
+    border-color: var(--ytc-border-strong);
+    color: var(--ytc-text-primary);
+    transform: scale(1.04);
+}
+
+.yt-cinema-speed-pill.active,
+.yt-cinema-speed-pill:focus-visible {
+    background: var(--ytc-fill-active);
+    border-color: var(--ytc-border-strong);
+    color: var(--ytc-text-primary);
+    outline: none;
+}
+
+.yt-cinema-speed-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 110px;
+    background: var(--ytc-bg-dock);
+    border: 1px solid var(--ytc-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px var(--ytc-shadow), 0 0 1px var(--ytc-fill-hover);
+    padding: 6px 0;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.96);
+    transform-origin: top right;
+    transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.18s;
+    max-height: 290px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ytc-fill-hover) transparent;
+}
+
+.yt-cinema-speed-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.yt-cinema-speed-menu::-webkit-scrollbar-thumb {
+    background: var(--ytc-fill-hover);
+    border-radius: 4px;
+}
+
+.yt-cinema-speed-menu.yt-cinema-speed-menu-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.yt-cinema-speed-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ytc-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-speed-item:hover {
+    background: var(--ytc-fill);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-speed-item.active {
+    color: var(--ytc-accent);
+    font-weight: 700;
+    background: var(--ytc-accent-softer);
+}
+
+.yt-cinema-speed-check {
+    width: 14px;
+    height: 14px;
+    display: none;
+    color: var(--ytc-accent);
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.yt-cinema-speed-item.active .yt-cinema-speed-check {
+    display: inline-block;
+}
+
+/* Video Quality Selector & Dropdown Menu */
+.yt-cinema-quality-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.yt-cinema-quality-pill {
+    height: 36px;
+    min-width: 44px;
+    padding: 0 10px;
+    background: var(--ytc-fill);
+    border: 1px solid var(--ytc-border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--ytc-text-secondary);
+    user-select: none;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yt-cinema-quality-pill:hover {
+    background: var(--ytc-fill-hover);
+    border-color: var(--ytc-border-strong);
+    color: var(--ytc-text-primary);
+    transform: scale(1.04);
+}
+
+.yt-cinema-quality-pill.active,
+.yt-cinema-quality-pill:focus-visible {
+    background: var(--ytc-fill-active);
+    border-color: var(--ytc-border-strong);
+    color: var(--ytc-text-primary);
+    outline: none;
+}
+
+.yt-cinema-quality-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 130px;
+    background: var(--ytc-bg-dock);
+    border: 1px solid var(--ytc-border);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px var(--ytc-shadow), 0 0 1px var(--ytc-fill-hover);
+    padding: 6px 0;
+    z-index: 50;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.96);
+    transform-origin: top right;
+    transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.18s;
+    max-height: 290px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ytc-fill-hover) transparent;
+}
+
+.yt-cinema-quality-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.yt-cinema-quality-menu::-webkit-scrollbar-thumb {
+    background: var(--ytc-fill-hover);
+    border-radius: 4px;
+}
+
+.yt-cinema-quality-menu.yt-cinema-quality-menu-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.yt-cinema-quality-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 14px;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ytc-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    gap: 8px;
+}
+
+.yt-cinema-quality-item:hover,
+.yt-cinema-quality-item.keyboard-focus {
+    background: var(--ytc-fill);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-quality-item.active {
+    color: var(--ytc-accent);
+    font-weight: 700;
+    background: var(--ytc-accent-softer);
+}
+
+.yt-cinema-quality-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+.yt-cinema-quality-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: var(--ytc-accent-soft);
+    color: var(--ytc-accent);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.yt-cinema-quality-badge-4k {
+    background: var(--ytc-danger-soft);
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-quality-check {
+    width: 14px;
+    height: 14px;
+    display: none;
+    color: var(--ytc-accent);
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.yt-cinema-quality-item.active .yt-cinema-quality-check {
+    display: inline-block;
+}
