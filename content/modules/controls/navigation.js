@@ -53,6 +53,7 @@
             // The bridge re-reports this video's quality list, and the reset
             // makes the remembered quality eligible to apply once again.
             ctx.quality.resetForNewVideo();
+            ctx.history.onVideoChanged(newId);
 
             if (newTitle) updateHeaderTitle(newTitle, Boolean(isShortVideo));
         }
@@ -99,8 +100,10 @@
                 layout.syncAmbientToContainer(overlayElement, els.container);
             }
 
+            ctx.history.stop();
             ctx.quality.resetForNewVideo();
-            iframe.src = video.buildPlayerUrl(newId, isShortVideo, null, true);
+            const resume = YTC.progress.resumeTimestamp(newId);
+            iframe.src = video.buildPlayerUrl(newId, isShortVideo, resume, true);
         }
 
         /** Click the player's own previous button, else fall back to our history. */

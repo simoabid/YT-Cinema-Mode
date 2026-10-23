@@ -9,7 +9,7 @@
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
 [![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 
 <p align="center">
@@ -81,6 +81,9 @@ Smooth volume adjustment (`↑` / `↓`) and instant mute/unmute (`M`) with a re
 
 ### ⏭️ **Playlist & Up Next Navigation**
 Skip to the next recommendation/playlist video (`N`) or previous video (`P`) without leaving the overlay.
+
+### 🕘 **Watch History & Resume Sync**
+Playback is reported to your signed-in YouTube account with the watch page's own tracking beacons, so videos land in history with progress. Cinema Mode also remembers your place locally.
 
 ### 🖱️ **Mouse Triggers & Key Recorder**
 `Alt+Click` or middle-click any thumbnail, or bind any keyboard key using the interactive hotkey recorder.
@@ -270,7 +273,9 @@ Click the extension icon 🧩 in your toolbar to customize features:
 - **Zero-Build Module System**: The content script is split into small, single-purpose files that the manifest loads **in order** via `content_scripts[].js`. Everything shares one isolated-world namespace (`YTC`), so there is no bundler, no transpiler and no extra dependencies — you can edit a file, hit reload in `chrome://extensions`, and see the change.
 - **Tokenized Catppuccin Theming**: every colour the extension paints resolves through semantic `--ytc-*` custom properties defined once in `content/styles/00-themes.css`. The flavor is just a `data-ytc-theme` attribute on the document root, so a new theme is one palette block — no component stylesheet changes.
 - **Cross-Browser Universal API Bridge**: Unified wrapper dynamically routing between `chrome.*` and `browser.*` APIs.
-- **Sandboxed Full YouTube Player**: Embeds the authentic YouTube watch page inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
+- **Sandboxed Full YouTube Player**: Embeds the authentic YouTube player inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
+- **Native Watch-History Reporting**: The embed surface is tracked by YouTube as an embedded player, so it does not update watch history on its own. The extension mints a normal WEB player response and sends the same `videostats` playback/watchtime beacons as the watch page (`el=detailpage`, one stable `cpn`, `st`/`et` windows), which records history and resume progress without giving up the lightweight embed or altering its headers. Authenticated requests carry the same `X-Goog-AuthUser` and `SAPISIDHASH` headers as YouTube itself, which requires the `cookies` permission; the cookie is only used locally to sign those requests and is never stored or sent anywhere else.
+- **Local Resume Memory**: Playback positions are also kept in `storage.local` per video, so reopening a video in Cinema Mode resumes where you left off even before the account history round-trips.
 - **Hardware-Accelerated Ambient Engine**: Low-overhead HTML5 canvas that samples the playing video into a 32×18 buffer and renders responsive CSS glow filters from it.
 - **Firefox Xray Vision Security Unwrapping**: Content scripts access `movie_player.wrappedJSObject` to cleanly interface with YouTube playback methods across Firefox boundaries.
 - **Dual Manifest Configuration**:
@@ -299,7 +304,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   │   ├── controller.js                   Per-overlay context + wiring of all controls
 │   │   └── controls/                       One feature per file
 │   │       ├── toast.js  autohide.js  speed.js  quality.js
-│   │       ├── transport.js  ambient.js  screenshot.js
+│   │       ├── transport.js  history.js  ambient.js  screenshot.js
 │   │       └── dock.js  navigation.js  keyboard.js
 │   └── styles/                             Stylesheet split into 8 ordered partials
 │       ├── 00-themes.css                   Catppuccin palette + semantic tokens

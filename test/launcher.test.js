@@ -60,6 +60,34 @@ describe('launcher openFromLink', () => {
         if (calls[0][0] !== 'vid123') throw new Error(`wrong PiP video: ${calls[0][0]}`);
     });
 
+    it('resumes from locally saved progress when the link has no timestamp', () => {
+        const env = loadExtension();
+        const calls = captureOverlayCalls(env);
+        env.YTC.progress.save('vid123', 65000, 600000);
+
+        env.YTC.launcher.openFromLink(
+            makeLink(env, 'https://www.youtube.com/watch?v=vid123', 'Clip')
+        );
+
+        if (calls[0][2] !== '65') {
+            throw new Error(`expected resume timestamp 65, got ${calls[0][2]}`);
+        }
+    });
+
+    it('lets an explicit link timestamp win over saved progress', () => {
+        const env = loadExtension();
+        const calls = captureOverlayCalls(env);
+        env.YTC.progress.save('vid123', 65000, 600000);
+
+        env.YTC.launcher.openFromLink(
+            makeLink(env, 'https://www.youtube.com/watch?v=vid123&t=30s', 'Clip')
+        );
+
+        if (calls[0][2] !== '30s') {
+            throw new Error(`link timestamp was replaced: ${calls[0][2]}`);
+        }
+    });
+
     it('honours the startDocked option', () => {
         const env = loadExtension();
         const calls = captureOverlayCalls(env);

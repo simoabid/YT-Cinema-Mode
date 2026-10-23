@@ -5,7 +5,7 @@ Mutation check: revert each bug fix in turn and confirm the test suite fails.
 This proves the tests actually guard the fixes rather than passing vacuously.
 Every patch below is the reverse of a real change made to the extension.
 """
-import subprocess, shutil, sys, tempfile, os
+import subprocess, shutil, signal, sys, tempfile, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,6 +34,7 @@ MUTATIONS = [
             // The bridge re-reports this video's quality list, and the reset
             // makes the remembered quality eligible to apply once again.
             ctx.quality.resetForNewVideo();
+            ctx.history.onVideoChanged(newId);
 
             if (newTitle) updateHeaderTitle(newTitle, Boolean(isShortVideo));""",
        """            ctx.currentVideoId = newId;
@@ -41,6 +42,7 @@ MUTATIONS = [
             // The bridge re-reports this video's quality list, and the reset
             // makes the remembered quality eligible to apply once again.
             ctx.quality.resetForNewVideo();
+            ctx.history.onVideoChanged(newId);
 
             if (newTitle) updateHeaderTitle(newTitle, Boolean(isShortVideo));""")]),
 
@@ -127,8 +129,8 @@ MUTATIONS = [
      [("""            // The bridge re-reports this video's quality list, and the reset
             // makes the remembered quality eligible to apply once again.
             ctx.quality.resetForNewVideo();
-
-""", "")]),
+            ctx.history.onVideoChanged(newId);""",
+       """            ctx.history.onVideoChanged(newId);""")]),
 
     ("content.js", "hover stops tracking when the badge is hidden", "content/content.js",
      [("""        // Always track, so hotkeys work even when the indicator is disabled.
@@ -166,6 +168,77 @@ MUTATIONS = [
     ("video.js", "junk thumbnail alt text is accepted as a title", "content/modules/video.js",
      [("""        if (!text || UNUSABLE_TITLE_TEXT.has(text.toLowerCase())) return null;""",
        """        if (!text) return null;""")]),
+
+    ("history.js", "beacons are minted for an embedded watch", "content/modules/controls/history.js",
+     [("""        url += `ver=2&cpn=${encodeURIComponent(opts.cpn)}&c=WEB&cmt=${opts.cmt}&el=detailpage`;""",
+       """        url += `ver=2&cpn=${encodeURIComponent(opts.cpn)}&c=WEB&cmt=${opts.cmt}&el=embedded`;""")]),
+
+    ("history.js", "local progress is never saved", "content/modules/controls/history.js",
+     [("""            } else if (!skipProgress) {
+                YTC.progress.save(current.videoId, positionMs, duration);
+            }""",
+       """            }""")]),
+
+    ("history.js", "completed videos are not marked to the end", "content/modules/controls/history.js",
+     [("""            const cmt = completion && tracking.lengthSeconds > 1
+                ? Math.max(0, Math.floor(tracking.lengthSeconds) - 1)
+                : Math.max(0, Math.round(clamped / 1000));""",
+       """            const cmt = Math.max(0, Math.round(clamped / 1000));""")]),
+
+    ("history.js", "page-realm fetch is skipped", "content/modules/controls/history.js",
+     [("""        const pageWindow = window.wrappedJSObject;
+        if (pageWindow && typeof pageWindow.fetch === 'function' && typeof cloneInto === 'function') {""",
+       """        const pageWindow = window.wrappedJSObject;
+        if (false) {""")]),
+
+    ("history.js", "history requests omit the account selector", "content/modules/controls/history.js",
+     [("""        if (authUser !== null && authUser !== undefined && authUser !== '') {
+            headers['X-Goog-AuthUser'] = String(authUser);
+        }""",
+       """        if (false) {
+            headers['X-Goog-AuthUser'] = String(authUser);
+        }""")]),
+
+    ("history.js", "history requests omit the authorization header", "content/modules/controls/history.js",
+     [("""        if (auth) {
+            headers.Authorization = auth.authorization;
+            if (auth.pageId) headers['X-Goog-PageId'] = auth.pageId;
+        }""",
+       """        if (auth) {
+            if (auth.pageId) headers['X-Goog-PageId'] = auth.pageId;
+        }""")]),
+
+    ("background.js", "SAPISIDHASH input order is wrong", "background/background.js",
+     [("""        const input = userSession
+            ? `${userSession} ${timestamp} ${cookie} ${AUTH_ORIGIN}`
+            : `${timestamp} ${cookie} ${AUTH_ORIGIN}`;""",
+       """        const input = userSession
+            ? `${timestamp} ${userSession} ${cookie} ${AUTH_ORIGIN}`
+            : `${timestamp} ${cookie} ${AUTH_ORIGIN}`;""")]),
+
+    ("history.js", "final beacons are not marked ended", "content/modules/controls/history.js",
+     [("""        if (opts.final) url += '&state=ended';""",
+       """        if (opts.final) url += '&state=playing';""")]),
+
+    ("history.js", "ads are reported as playback", "content/modules/controls/history.js",
+     [("""            if (!ctx.currentVideoId) return;
+            if (isAdPlaying()) return;""",
+       """            if (!ctx.currentVideoId) return;""")]),
+
+    ("controller.js", "close does not commit the history session", "content/modules/controller.js",
+     [("""        ctx.transport.clearTimers();
+        ctx.history.stop();""",
+       """        ctx.transport.clearTimers();""")]),
+
+    ("navigation.js", "embed navigation does not tell history", "content/modules/controls/navigation.js",
+     [("""            ctx.quality.resetForNewVideo();
+            ctx.history.onVideoChanged(newId);""",
+       """            ctx.quality.resetForNewVideo();""")]),
+
+    ("launcher.js", "saved progress is ignored on launch", "content/modules/launcher.js",
+     [("""        const timestamp = video.getVideoTimestamp(link.href) ||
+            YTC.progress.resumeTimestamp(videoId);""",
+       """        const timestamp = video.getVideoTimestamp(link.href);""")]),
 ]
 
 def run_tests():
@@ -174,7 +247,12 @@ def run_tests():
                        env={**os.environ, "PATH": os.environ.get("NODE_BIN", "") + ":" + os.environ["PATH"]})
     return r.returncode, r.stdout + r.stderr
 
+def _interrupt(signum, frame):
+    raise KeyboardInterrupt(f"signal {signum}")
+
+
 def main():
+    signal.signal(signal.SIGTERM, _interrupt)
     node_bin = sys.argv[1] if len(sys.argv) > 1 else ""
     if node_bin:
         os.environ["NODE_BIN"] = node_bin
@@ -199,9 +277,12 @@ def main():
         except SystemExit as e:
             print(e); return 1
 
-        open(path, "w", encoding="utf-8").write(mutated)
-        rc, out = run_tests()
-        open(path, "w", encoding="utf-8").write(original)
+        try:
+            open(path, "w", encoding="utf-8").write(mutated)
+            rc, out = run_tests()
+        finally:
+            # Always restore, even if the run is interrupted mid-mutation.
+            open(path, "w", encoding="utf-8").write(original)
 
         name = name.split()[0]
         if rc == 0:

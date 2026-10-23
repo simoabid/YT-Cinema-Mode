@@ -117,6 +117,17 @@ describe('navigation recordNavigation', () => {
         if (ctx.currentVideoId !== 'first111') throw new Error('empty id overwrote currentVideoId');
     });
 
+    it('tells the history control that the video changed', () => {
+        const { ctx, navigation } = setupNavigation();
+        const before = ctx.history.changed;
+
+        navigation.recordNavigation('second22', 'Second Video', false);
+
+        if (ctx.history.changed !== before + 1) {
+            throw new Error(`expected one history change, got ${ctx.history.changed - before}`);
+        }
+    });
+
     it('resets the quality control so the saved quality applies to each new video', () => {
         const { ctx, navigation } = setupNavigation();
         const before = ctx.quality.resets;

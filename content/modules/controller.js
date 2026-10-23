@@ -58,6 +58,7 @@
 
             // Shared mutable state, owned by the controls that change them.
             isDocked: Boolean(options.startDocked),
+            isShort: Boolean(options.isShort),
             currentVideoId: options.videoId,
             flags: { speedMenuOpen: false, qualityMenuOpen: false },
 
@@ -89,6 +90,7 @@
         ctx.speed = controls.speed.createSpeedControl(ctx);
         ctx.quality = controls.quality.createQualityControl(ctx);
         ctx.transport = controls.transport.createTransportControl(ctx);
+        ctx.history = controls.history.createHistoryControl(ctx);
         ctx.ambient = controls.ambient.createAmbientControl(ctx);
         ctx.screenshot = controls.screenshot.createScreenshotControl(ctx);
         ctx.dock = controls.dock.createDockControl(ctx);
@@ -149,6 +151,7 @@
                 }
                 ctx.speed.applyToPlayer();
                 overlayElement._startAmbient?.();
+                ctx.history.onPlaying();
             };
 
             const onStopped = () => {
@@ -161,11 +164,22 @@
 
             video.addEventListener('play', onPlaying);
             video.addEventListener('playing', onPlaying);
-            video.addEventListener('pause', onStopped);
-            video.addEventListener('ended', onStopped);
+            video.addEventListener('pause', () => {
+                onStopped();
+                ctx.history.onPaused();
+            });
+            video.addEventListener('ended', () => {
+                onStopped();
+                ctx.history.onEnded();
+            });
+            video.addEventListener('seeking', () => ctx.history.onSeeking());
+
+            // A new embed document belongs to a (possibly) different video.
+            ctx.history.onVideoChanged(ctx.currentVideoId);
 
             if (!video.paused && video.readyState >= MIN_VIDEO_READY_STATE) {
                 overlayElement._startAmbient?.();
+                ctx.history.onPlaying();
             }
 
             video.addEventListener('loadedmetadata', () => {
@@ -300,6 +314,7 @@
         ctx.speed.closeMenu();
         ctx.quality.closeMenu();
         ctx.transport.clearTimers();
+        ctx.history.stop();
 
         try {
             const { video } = ctx.getPlayerElements();

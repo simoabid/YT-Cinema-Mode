@@ -28,6 +28,7 @@ const MODULE_ORDER = [
     'content/modules/controls/speed.js',
     'content/modules/controls/quality.js',
     'content/modules/controls/transport.js',
+    'content/modules/controls/history.js',
     'content/modules/controls/ambient.js',
     'content/modules/controls/screenshot.js',
     'content/modules/controls/dock.js',
@@ -108,7 +109,10 @@ function loadExtension(overrides = {}, { boot = false } = {}) {
         clearInterval,
         requestAnimationFrame: window.requestAnimationFrame,
         cancelAnimationFrame: window.cancelAnimationFrame,
-        navigator: { clipboard: { writeText: async () => {} } },
+        navigator: { userAgent: 'test-agent', clipboard: { writeText: async () => {} } },
+        fetch: async () => ({ ok: true, status: 204, json: async () => ({}), text: async () => '' }),
+        cloneInto: (value) => value,
+        URLSearchParams,
         CustomEvent: function CustomEvent(type, init) { return { type, detail: init?.detail }; },
         Promise,
         Array,
@@ -393,6 +397,18 @@ function createContext(env, options = {}) {
 
     ctx.dock = { toggles: 0, toggle() { this.toggles++; }, bringToFront() {}, initDockedState() {}, cancelPendingFrames() {}, endResize() {}, bind() {} };
     ctx.screenshot = { takes: 0, takeScreenshot() { this.takes++; }, bind() {} };
+    ctx.history = {
+        changed: 0,
+        stops: 0,
+        onPlaying() {},
+        onPaused() {},
+        onEnded() {},
+        onSeeking() {},
+        onVideoChanged() { this.changed++; },
+        stop() { this.stops++; },
+        flush() {},
+        isActive: () => false
+    };
 
     return ctx;
 }

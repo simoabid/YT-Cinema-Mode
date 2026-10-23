@@ -17,8 +17,13 @@ globalThis.YTC = globalThis.YTC || {};
         dockedSize: 'ytCinemaDockedSize',
         dockedShortsSize: 'ytCinemaDockedShortsSize',
         speed: 'ytCinemaSavedSpeed',
-        quality: 'ytCinemaSavedQuality'
+        quality: 'ytCinemaSavedQuality',
+        progress: 'ytCinemaProgress'
     };
+
+    const MAX_PROGRESS_ENTRIES = 100;
+    const MIN_PROGRESS_MS = 10000;
+    const COMPLETE_MARGIN_MS = 30000;
 
     const DEFAULTS = {
         hotkey: ' ',
@@ -58,7 +63,9 @@ globalThis.YTC = globalThis.YTC || {};
         topZIndex: 2147483640,
         savedDockedPos: null,
         savedDockedSize: null,
-        savedDockedShortsSize: null
+        savedDockedShortsSize: null,
+        /** Last known playback position per video id, mirrored to storage.local. */
+        progress: {}
     };
 
     let wasBackgroundPlaying = false;
@@ -110,6 +117,72 @@ globalThis.YTC = globalThis.YTC || {};
 
     const saveSpeed = debounce((speed) => setLocal(KEYS.speed, speed), 600);
     const saveQuality = debounce((quality) => setLocal(KEYS.quality, quality), 600);
+
+    // ------------------------------------------------------------ progress
+
+    let lastProgressSnapshot = '';
+
+    function persistProgress() {
+        const snapshot = JSON.stringify(state.progress);
+        if (snapshot === lastProgressSnapshot) return;
+        lastProgressSnapshot = snapshot;
+        setLocal(KEYS.progress, state.progress);
+    }
+
+    const saveProgressDebounced = debounce(persistProgress, 800);
+
+    function getProgress(videoId) {
+        if (!videoId) return null;
+        const entry = state.progress[videoId];
+        return entry && typeof entry.position === 'number' ? entry : null;
+    }
+
+    /** Seconds to resume from, or null when the saved point is too early/finished. */
+    function resumeTimestamp(videoId) {
+        const entry = getProgress(videoId);
+        if (!entry || entry.position < MIN_PROGRESS_MS) return null;
+        if (entry.duration > 0 && entry.position >= entry.duration - COMPLETE_MARGIN_MS) return null;
+        return String(Math.floor(entry.position / 1000));
+    }
+
+    function saveProgress(videoId, positionMs, durationMs) {
+        if (!videoId) return;
+        const position = Math.round(Number(positionMs) || 0);
+        const duration = Math.round(Number(durationMs) || 0);
+
+        // A fresh start must not erase the resume point of an earlier session.
+        if (position < MIN_PROGRESS_MS) return;
+
+        if (duration > 0 && position >= duration - COMPLETE_MARGIN_MS) {
+            delete state.progress[videoId];
+        } else {
+            state.progress[videoId] = { position, duration, updated: Date.now() };
+            const kept = Object.entries(state.progress)
+                .filter(([, entry]) => entry && typeof entry.position === 'number')
+                .sort((a, b) => (b[1].updated || 0) - (a[1].updated || 0))
+                .slice(0, MAX_PROGRESS_ENTRIES);
+            state.progress = Object.fromEntries(kept);
+        }
+
+        saveProgressDebounced();
+    }
+
+    function clearProgress(videoId) {
+        if (!videoId || !(videoId in state.progress)) return;
+        delete state.progress[videoId];
+        saveProgressDebounced();
+    }
+
+    function loadStoredProgress() {
+        try {
+            api.storage.local.get([KEYS.progress], (res) => {
+                const stored = res && res[KEYS.progress];
+                if (!stored || typeof stored !== 'object') return;
+                state.progress = stored;
+                lastProgressSnapshot = JSON.stringify(stored);
+            });
+        } catch (_) {}
+    }
 
     // -------------------------------------------------------- overlay visuals
 
@@ -321,6 +394,10 @@ globalThis.YTC = globalThis.YTC || {};
                     settings.savedSpeed = changes[KEYS.speed].newValue;
                 } else if (area === 'local' && changes[KEYS.quality] && typeof changes[KEYS.quality].newValue === 'string') {
                     settings.savedQuality = changes[KEYS.quality].newValue;
+                } else if (area === 'local' && changes[KEYS.progress] && changes[KEYS.progress].newValue &&
+                    typeof changes[KEYS.progress].newValue === 'object') {
+                    state.progress = changes[KEYS.progress].newValue;
+                    lastProgressSnapshot = JSON.stringify(state.progress);
                 }
             });
         } catch (_) {}
@@ -374,9 +451,18 @@ globalThis.YTC = globalThis.YTC || {};
     YTC.pauseBackgroundVideo = pauseBackgroundVideo;
     YTC.resumeBackgroundVideo = resumeBackgroundVideo;
 
+    YTC.progress = {
+        MIN_PROGRESS_MS,
+        get: getProgress,
+        resumeTimestamp,
+        save: saveProgress,
+        clear: clearProgress
+    };
+
     YTC.applySettings = applySettings;
     YTC.initSettings = function () {
         loadStoredDockGeometry();
+        loadStoredProgress();
         loadStoredSettings();
     };
 })(globalThis.YTC);

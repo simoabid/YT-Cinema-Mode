@@ -24,7 +24,8 @@
         if (!videoId) return false;
 
         const title = video.getVideoTitle(link);
-        const timestamp = video.getVideoTimestamp(link.href);
+        const timestamp = video.getVideoTimestamp(link.href) ||
+            YTC.progress.resumeTimestamp(videoId);
 
         if (useDirectPiP) {
             overlay.openDirectPictureInPicture(videoId, title, timestamp);
@@ -58,6 +59,9 @@
             : null;
         if (!timestamp && timestampFromUrl) {
             timestamp = video.getVideoTimestamp(window.location.href);
+        }
+        if (!timestamp) {
+            timestamp = YTC.progress.resumeTimestamp(videoId);
         }
 
         if (useDirectPiP) {

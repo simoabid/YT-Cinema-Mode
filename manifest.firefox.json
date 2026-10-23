@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "YouTube Cinema Mode",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Hover over any YouTube thumbnail and press 'Space' to watch in a beautiful cinema overlay",
   "permissions": [
     "storage",
     "clipboardWrite",
+    "cookies",
     "webRequest",
     "webRequestBlocking",
     "declarativeNetRequest",
@@ -57,6 +58,7 @@
         "content/modules/controls/speed.js",
         "content/modules/controls/quality.js",
         "content/modules/controls/transport.js",
+        "content/modules/controls/history.js",
         "content/modules/controls/ambient.js",
         "content/modules/controls/screenshot.js",
         "content/modules/controls/dock.js",

@@ -19,6 +19,72 @@ const api = (typeof browser !== 'undefined' && browser.runtime) ? browser : chro
 
 const SETTINGS_KEY = 'cinemaSettings';
 
+// ------------------------------------------------------- YouTube auth hash
+
+const AUTH_ORIGIN = 'https://www.youtube.com';
+
+/** The three cookie/scheme pairs YouTube itself sends in SAPISIDHASH. */
+const AUTH_COOKIE_SCHEMES = [
+    { scheme: 'SAPISIDHASH', cookies: ['SAPISID', '__Secure-3PAPISID'] },
+    { scheme: 'SAPISID1PHASH', cookies: ['__Secure-1PAPISID'] },
+    { scheme: 'SAPISID3PHASH', cookies: ['__Secure-3PAPISID'] }
+];
+
+async function readCookie(name) {
+    if (!api.cookies || !api.cookies.get) return null;
+    try {
+        const cookie = await api.cookies.get({ url: AUTH_ORIGIN, name });
+        return cookie && cookie.value ? cookie.value : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+async function sha1Hex(text) {
+    const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Reproduce the Authorization header YouTube's web client builds:
+ *
+ *   SAPISIDHASH <ts>_<sha1(USER_SESSION_ID ts COOKIE origin)>_u
+ *   SAPISID1PHASH ... SAPISID3PHASH ...
+ *
+ * The active account is selected separately with X-Goog-AuthUser, which is
+ * SESSION_INDEX (not always 0 when several Google accounts are signed in).
+ */
+async function buildHistoryAuth(sessionIndex, userSessionId, delegatedSessionId) {
+    if (!crypto || !crypto.subtle) return null;
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const userSession = userSessionId ? String(userSessionId) : '';
+    const tokens = [];
+
+    for (const entry of AUTH_COOKIE_SCHEMES) {
+        let cookie = null;
+        for (const name of entry.cookies) {
+            cookie = await readCookie(name);
+            if (cookie) break;
+        }
+        if (!cookie) continue;
+
+        const input = userSession
+            ? `${userSession} ${timestamp} ${cookie} ${AUTH_ORIGIN}`
+            : `${timestamp} ${cookie} ${AUTH_ORIGIN}`;
+        const hash = await sha1Hex(input);
+        tokens.push(`${entry.scheme} ${timestamp}_${hash}${userSession ? '_u' : ''}`);
+    }
+
+    if (tokens.length === 0) return null;
+    return {
+        authorization: tokens.join(' '),
+        authUser: String(sessionIndex ?? '0'),
+        origin: AUTH_ORIGIN,
+        pageId: delegatedSessionId ? String(delegatedSessionId) : null
+    };
+}
+
 // --------------------------------------------------------------- embed rules
 
 const RULE_ID_UNBLOCK_EMBED = 101;
@@ -218,6 +284,18 @@ function registerListeners() {
 
     api.commands.onCommand.addListener((command) => {
         if (command === 'toggle-cinema') toggleCinemaInActiveTab();
+    });
+
+    api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (!message || message.action !== 'yt-cinema-auth') return undefined;
+
+        buildHistoryAuth(message.sessionIndex, message.userSessionId, message.delegatedSessionId)
+            .then((auth) => sendResponse(auth))
+            .catch((err) => {
+                console.warn('[YouTube Cinema Mode] Could not build history auth:', err);
+                sendResponse(null);
+            });
+        return true;
     });
 }
 
