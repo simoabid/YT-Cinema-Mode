@@ -94,6 +94,8 @@ Built-in PiP mode, optional Direct PiP launching, and smart auto-pause/resume fo
 ### 👍 **Real Likes & Comments In The Overlay**
 See the video's actual like count, like or dislike it, and read the real comment threads without leaving cinema mode (`Shift+C`). The embedded player is untouched — comments slide in over the right edge of the video.
 
+The **Subscribe** pill next to them works like YouTube's own button: it subscribes or unsubscribes from the video's channel, shows the live subscriber count, and confirms the change with a toast.
+
 </td>
 </tr>
 </table>
@@ -280,7 +282,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 - **Sandboxed Full YouTube Player**: Embeds the authentic YouTube player inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
 - **Native Watch-History Reporting**: The embed surface is tracked by YouTube as an embedded player, so it does not update watch history on its own. The extension mints a normal WEB player response and sends the same `videostats` playback/watchtime beacons as the watch page (`el=detailpage`, one stable `cpn`, `st`/`et` windows), which records history and resume progress without giving up the lightweight embed or altering its headers. Authenticated requests carry the same `X-Goog-AuthUser` and `SAPISIDHASH` headers as YouTube itself, which requires the `cookies` permission; the cookie is only used locally to sign those requests and is never stored or sent anywhere else.
 - **Local Resume Memory**: Playback positions are also kept in `storage.local` per video, so reopening a video in Cinema Mode resumes where you left off even before the account history round-trips.
-- **Real Engagement, Minimal Embed**: The embed stays a plain player, so likes and comments are read from YouTube's own InnerTube API by the signed-in parent page. Like/dislike state and counts come from the same segmented button payload the watch page renders, ratings are submitted with the page's `SAPISIDHASH` auth, and comments are resolved from the `commentEntityPayload` entities YouTube now ships out-of-band.
+- **Real Engagement, Minimal Embed**: The embed stays a plain player, so likes, subscriptions and comments are read from YouTube's own InnerTube API by the signed-in parent page. Like/dislike state and counts come from the same segmented button payload the watch page renders, ratings are submitted with the page's `SAPISIDHASH` auth, and comments are resolved from the `commentEntityPayload` entities YouTube now ships out-of-band.
 - **Hardware-Accelerated Ambient Engine**: Low-overhead HTML5 canvas that samples the playing video into a 32×18 buffer and renders responsive CSS glow filters from it.
 - **Firefox Xray Vision Security Unwrapping**: Content scripts access `movie_player.wrappedJSObject` to cleanly interface with YouTube playback methods across Firefox boundaries.
 - **Dual Manifest Configuration**:
@@ -303,7 +305,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   │   ├── icons.js                        Every inline SVG used by the overlay
 │   │   ├── video.js                        URL / title / aspect-ratio helpers (pure)
 │   │   ├── innertube.js                    YouTube web API config, auth and fetch plumbing
-│   │   ├── engagement.js                   Like counts, ratings and comment parsing
+│   │   ├── engagement.js                   Like counts, ratings, subscriptions, comments
 │   │   ├── layout.js                       Container sizing, resizing, scroll lock
 │   │   ├── player.js                       Everything that reaches into the embed iframe
 │   │   ├── overlay.js                      Overlay DOM construction, direct PiP
