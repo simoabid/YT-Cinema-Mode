@@ -91,6 +91,9 @@ Playback is reported to your signed-in YouTube account with the watch page's own
 ### 🖼️ **Picture-in-Picture & Auto-Pause**
 Built-in PiP mode, optional Direct PiP launching, and smart auto-pause/resume for existing tab videos.
 
+### 👍 **Real Likes & Comments In The Overlay**
+See the video's actual like count, like or dislike it, and read the real comment threads without leaving cinema mode (`Shift+C`). The embedded player is untouched — comments slide in over the right edge of the video.
+
 </td>
 </tr>
 </table>
@@ -239,6 +242,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 | <kbd>S</kbd> | 📸 Capture native-res screenshot (Download PNG) |
 | <kbd>Shift</kbd> + <kbd>S</kbd> | 📋 Copy native-res screenshot directly to clipboard |
 | <kbd>Q</kbd> | 🎚️ Toggle the video quality menu |
+| <kbd>Shift</kbd> + <kbd>C</kbd> | 💬 Open / close the comments drawer |
 | <kbd>[</kbd> / <kbd>]</kbd> *(or <kbd><</kbd> / <kbd>></kbd>)* | ⏱️ Decrease / Increase playback speed |
 | <kbd>↑</kbd> / <kbd>↓</kbd> | 🔊 Volume up / down (±5% with glass HUD) |
 | <kbd>M</kbd> | 🔇 Toggle mute / unmute |
@@ -276,6 +280,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 - **Sandboxed Full YouTube Player**: Embeds the authentic YouTube player inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
 - **Native Watch-History Reporting**: The embed surface is tracked by YouTube as an embedded player, so it does not update watch history on its own. The extension mints a normal WEB player response and sends the same `videostats` playback/watchtime beacons as the watch page (`el=detailpage`, one stable `cpn`, `st`/`et` windows), which records history and resume progress without giving up the lightweight embed or altering its headers. Authenticated requests carry the same `X-Goog-AuthUser` and `SAPISIDHASH` headers as YouTube itself, which requires the `cookies` permission; the cookie is only used locally to sign those requests and is never stored or sent anywhere else.
 - **Local Resume Memory**: Playback positions are also kept in `storage.local` per video, so reopening a video in Cinema Mode resumes where you left off even before the account history round-trips.
+- **Real Engagement, Minimal Embed**: The embed stays a plain player, so likes and comments are read from YouTube's own InnerTube API by the signed-in parent page. Like/dislike state and counts come from the same segmented button payload the watch page renders, ratings are submitted with the page's `SAPISIDHASH` auth, and comments are resolved from the `commentEntityPayload` entities YouTube now ships out-of-band.
 - **Hardware-Accelerated Ambient Engine**: Low-overhead HTML5 canvas that samples the playing video into a 32×18 buffer and renders responsive CSS glow filters from it.
 - **Firefox Xray Vision Security Unwrapping**: Content scripts access `movie_player.wrappedJSObject` to cleanly interface with YouTube playback methods across Firefox boundaries.
 - **Dual Manifest Configuration**:
@@ -297,6 +302,8 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   │   ├── theme.js                        Catppuccin flavor selection (data-ytc-theme)
 │   │   ├── icons.js                        Every inline SVG used by the overlay
 │   │   ├── video.js                        URL / title / aspect-ratio helpers (pure)
+│   │   ├── innertube.js                    YouTube web API config, auth and fetch plumbing
+│   │   ├── engagement.js                   Like counts, ratings and comment parsing
 │   │   ├── layout.js                       Container sizing, resizing, scroll lock
 │   │   ├── player.js                       Everything that reaches into the embed iframe
 │   │   ├── overlay.js                      Overlay DOM construction, direct PiP
@@ -305,11 +312,11 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   │   └── controls/                       One feature per file
 │   │       ├── toast.js  autohide.js  speed.js  quality.js
 │   │       ├── transport.js  history.js  ambient.js  screenshot.js
-│   │       └── dock.js  navigation.js  keyboard.js
-│   └── styles/                             Stylesheet split into 8 ordered partials
+│   │       └── dock.js  navigation.js  engagement.js  keyboard.js
+│   └── styles/                             Stylesheet split into 9 ordered partials
 │       ├── 00-themes.css                   Catppuccin palette + semantic tokens
 │       ├── 01-overlay.css   02-ambient.css   03-docked.css   04-shorts.css
-│       └── 05-feedback.css  06-menus.css     07-page.css
+│       └── 05-feedback.css  06-menus.css     07-page.css     08-engagement.css
 ├── popup/                                  Settings UI
 ├── icons/                                  Extension icons (+ icon-source.png)
 ├── docs/                                   Historical audit notes
