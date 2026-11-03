@@ -163,7 +163,7 @@
 
         function onPointerDown(e) {
             if (!ctx.isDocked || isResizing) return;
-            if (e.target.closest('button, .yt-cinema-speed-container, .yt-cinema-speed-pill, .yt-cinema-speed-menu, .yt-cinema-resize-handle, .yt-cinema-resize-grip')) return;
+            if (e.target.closest('button, .yt-cinema-speed-container, .yt-cinema-speed-pill, .yt-cinema-speed-menu, .yt-cinema-comments-panel, .yt-cinema-resize-handle, .yt-cinema-resize-grip')) return;
             if (e.button !== 0) return;
 
             isDragging = true;

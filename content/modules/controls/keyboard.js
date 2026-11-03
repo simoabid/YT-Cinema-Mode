@@ -16,6 +16,10 @@
         return active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || Boolean(active.isContentEditable);
     }
 
+    function isCommentsFocused() {
+        return Boolean(document.activeElement?.closest('.yt-cinema-comments-panel'));
+    }
+
     function createKeyboardControl(ctx) {
         const { overlayElement, iframe, els, flags } = ctx;
 
@@ -61,12 +65,28 @@
         function handleKey(event, fromIframe = false) {
             if (!fromIframe && isTypingTarget()) return true;
 
+            if (!fromIframe && isCommentsFocused()) {
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    ctx.engagement?.toggleComments(false);
+                    return true;
+                }
+                if (event.shiftKey && event.key.toLowerCase() === 'c') {
+                    event.preventDefault();
+                    ctx.engagement?.toggleComments();
+                    return true;
+                }
+                // Do not intercept scrolling or navigation keys when navigating comments
+                return false;
+            }
+
             ctx.autohide.reset();
 
             if (event.key === 'Escape') {
                 event.preventDefault();
                 if (flags.qualityMenuOpen) ctx.quality.closeMenu();
                 else if (flags.speedMenuOpen) ctx.speed.closeMenu();
+                else if (ctx.engagement?.isCommentsOpen()) ctx.engagement.toggleComments(false);
                 else ctx.close();
                 return true;
             }
@@ -143,6 +163,13 @@
                     event.preventDefault();
                     ctx.quality.toggleMenu();
                     return true;
+                case 'c':
+                    if (event.shiftKey) {
+                        event.preventDefault();
+                        ctx.engagement?.toggleComments();
+                        return true;
+                    }
+                    return false;
                 case 'j':
                     event.preventDefault();
                     transport.seekBySeconds(-JUMP_STEP);

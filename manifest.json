@@ -45,6 +45,8 @@
         "content/modules/theme.js",
         "content/modules/icons.js",
         "content/modules/video.js",
+        "content/modules/innertube.js",
+        "content/modules/engagement.js",
         "content/modules/layout.js",
         "content/modules/player.js",
         "content/modules/overlay.js",
@@ -59,6 +61,7 @@
         "content/modules/controls/screenshot.js",
         "content/modules/controls/dock.js",
         "content/modules/controls/navigation.js",
+        "content/modules/controls/engagement.js",
         "content/modules/controls/keyboard.js",
         "content/modules/controller.js",
         "content/content.js"
@@ -71,7 +74,8 @@
         "content/styles/04-shorts.css",
         "content/styles/05-feedback.css",
         "content/styles/06-menus.css",
-        "content/styles/07-page.css"
+        "content/styles/07-page.css",
+        "content/styles/08-engagement.css"
       ],
       "run_at": "document_idle"
     }

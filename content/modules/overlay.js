@@ -125,6 +125,11 @@
                 <span class="yt-cinema-title-text"></span>
             </div>
             <div class="yt-cinema-controls">
+                <div class="yt-cinema-engagement">
+                    <button class="yt-cinema-rating-btn yt-cinema-like-btn" title="Like this video" aria-pressed="false">${icons.thumbsUp}<span class="yt-cinema-rating-count"></span></button>
+                    <button class="yt-cinema-rating-btn yt-cinema-dislike-btn" title="Dislike this video" aria-pressed="false">${icons.thumbsDown}</button>
+                    <button class="yt-cinema-btn yt-cinema-comments-btn" title="Comments (Shift+C)">${icons.comment}<span class="yt-cinema-comments-count"></span></button>
+                </div>
                 <button class="yt-cinema-btn yt-cinema-prev-btn" title="Previous Video (P)">${icons.previous}</button>
                 <button class="yt-cinema-btn yt-cinema-next-btn" title="Next Video (N)">${icons.next}</button>
                 <button class="yt-cinema-btn yt-cinema-dock-btn" title="Mini-Player / Corner Dock (D)">${icons.dock}</button>
@@ -209,10 +214,25 @@
             <span class="yt-cinema-volume-text">100%</span>
         `;
 
+        const commentsPanel = document.createElement('div');
+        commentsPanel.className = 'yt-cinema-comments-panel';
+        commentsPanel.setAttribute('aria-hidden', 'true');
+        commentsPanel.innerHTML = `
+            <div class="yt-cinema-comments-head">
+                <span class="yt-cinema-comments-heading">Comments</span>
+                <span class="yt-cinema-comments-total"></span>
+                <button class="yt-cinema-comments-close" title="Close comments (Shift+C or Esc)">${icons.close}</button>
+            </div>
+            <div class="yt-cinema-comments-status"></div>
+            <div class="yt-cinema-comments-list"></div>
+            <button class="yt-cinema-comments-more" title="Load more comments">Show more comments</button>
+        `;
+
         playerWrapper.appendChild(iframe);
         playerWrapper.appendChild(dragShield);
         playerWrapper.appendChild(shutterFlash);
         playerWrapper.appendChild(volumeHud);
+        playerWrapper.appendChild(commentsPanel);
         playerWrapper.appendChild(toast);
 
         const footer = document.createElement('div');

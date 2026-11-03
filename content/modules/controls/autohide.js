@@ -72,7 +72,7 @@
         /** Hiding is suppressed while a menu is open or the user is on the chrome. */
         function isBlockingHide() {
             return !settings.autoHideControls || ctx.isDocked || isHoveringControls ||
-                flags.speedMenuOpen || flags.qualityMenuOpen;
+                flags.speedMenuOpen || flags.qualityMenuOpen || flags.commentsOpen;
         }
 
         /** Persistent state: the video hide timer is never armed in this mode. */

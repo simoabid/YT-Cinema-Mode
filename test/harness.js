@@ -19,6 +19,8 @@ const MODULE_ORDER = [
     'content/modules/theme.js',
     'content/modules/icons.js',
     'content/modules/video.js',
+    'content/modules/innertube.js',
+    'content/modules/engagement.js',
     'content/modules/layout.js',
     'content/modules/player.js',
     'content/modules/overlay.js',
@@ -33,6 +35,7 @@ const MODULE_ORDER = [
     'content/modules/controls/screenshot.js',
     'content/modules/controls/dock.js',
     'content/modules/controls/navigation.js',
+    'content/modules/controls/engagement.js',
     'content/modules/controls/keyboard.js',
     'content/modules/controller.js'
 ];
@@ -220,6 +223,32 @@ function buildOverlayDom(document) {
     container.appendChild(qualityPill);
     container.appendChild(qualityMenu);
 
+    const likeBtn = document.createElement('button');
+    likeBtn.className = 'yt-cinema-rating-btn yt-cinema-like-btn';
+    likeBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-rating-count'
+    }));
+    container.appendChild(likeBtn);
+
+    const dislikeBtn = document.createElement('button');
+    dislikeBtn.className = 'yt-cinema-rating-btn yt-cinema-dislike-btn';
+    container.appendChild(dislikeBtn);
+
+    const commentsBtn = document.createElement('button');
+    commentsBtn.className = 'yt-cinema-btn yt-cinema-comments-btn';
+    commentsBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-comments-count'
+    }));
+    container.appendChild(commentsBtn);
+
+    const commentsPanel = document.createElement('div');
+    commentsPanel.className = 'yt-cinema-comments-panel';
+    for (const cls of ['yt-cinema-comments-total', 'yt-cinema-comments-status',
+        'yt-cinema-comments-list', 'yt-cinema-comments-more', 'yt-cinema-comments-close']) {
+        commentsPanel.appendChild(Object.assign(document.createElement('div'), { className: cls }));
+    }
+    playerWrapper.appendChild(commentsPanel);
+
     for (const cls of ['yt-cinema-drag-shield', 'yt-cinema-shutter-flash']) {
         container.appendChild(document.createElement('div', cls));
     }
@@ -253,7 +282,8 @@ function buildOverlayDom(document) {
     iframe.className = 'yt-cinema-iframe';
     iframe.contentWindow = { postMessage() {} };
 
-    return { overlay, container, iframe, speedPill, speedMenu, qualityPill, qualityMenu, titleSpan };
+    return { overlay, container, iframe, speedPill, speedMenu, qualityPill, qualityMenu, titleSpan,
+        likeBtn, dislikeBtn, commentsBtn, commentsPanel };
 }
 
 /** A minimal fake YouTube <video> + movie_player pair. */
@@ -310,7 +340,7 @@ function createContext(env, options = {}) {
 
     dom.iframe.contentDocument = embed.embedDoc;
 
-    const flags = { speedMenuOpen: false, qualityMenuOpen: false };
+    const flags = { speedMenuOpen: false, qualityMenuOpen: false, commentsOpen: false };
 
     const ctx = {
         overlayElement: dom.overlay,
@@ -335,6 +365,15 @@ function createContext(env, options = {}) {
             dockBtn: dom.container.querySelector('.yt-cinema-dock-btn'),
             prevBtn: dom.container.querySelector('.yt-cinema-prev-btn'),
             nextBtn: dom.container.querySelector('.yt-cinema-next-btn'),
+            likeBtn: dom.likeBtn,
+            dislikeBtn: dom.dislikeBtn,
+            commentsBtn: dom.commentsBtn,
+            commentsPanel: dom.commentsPanel,
+            commentsList: dom.commentsPanel.querySelector('.yt-cinema-comments-list'),
+            commentsTotal: dom.commentsPanel.querySelector('.yt-cinema-comments-total'),
+            commentsMore: dom.commentsPanel.querySelector('.yt-cinema-comments-more'),
+            commentsClose: dom.commentsPanel.querySelector('.yt-cinema-comments-close'),
+            commentsStatus: dom.commentsPanel.querySelector('.yt-cinema-comments-status'),
             speedPill: dom.speedPill,
             speedMenu: dom.speedMenu,
             qualityPill: dom.qualityPill,

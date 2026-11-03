@@ -1,0 +1,393 @@
+/* Like/dislike pills, the comments button and the sliding comment drawer.
+   All of it lives in chrome we own — the embedded player is never resized or
+   rebuilt, the drawer simply slides over the right edge of the video. */
+
+/* ------------------------------------------------------------------ header */
+
+/* The engagement pills widen the header, so the title must be the part that
+   gives way — without min-width:0 a nowrap flex item refuses to shrink. */
+.yt-cinema-header .yt-cinema-title {
+    min-width: 0;
+}
+
+.yt-cinema-header .yt-cinema-controls {
+    flex-shrink: 0;
+
+    flex-wrap: nowrap;
+}
+
+.yt-cinema-engagement {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 6px;
+    margin-right: 2px;
+    border-right: 1px solid var(--ytc-border);
+}
+
+.yt-cinema-rating-btn {
+    height: 36px;
+    min-width: 36px;
+    padding: 0 8px;
+    background: var(--ytc-fill);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--ytc-text-secondary);
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.yt-cinema-rating-btn:hover {
+    background: var(--ytc-fill-hover);
+    color: var(--ytc-text-primary);
+    transform: scale(1.05);
+}
+
+.yt-cinema-rating-btn svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.yt-cinema-rating-btn.yt-cinema-rating-active {
+    background: var(--ytc-accent-soft);
+    border-color: var(--ytc-accent-border);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-rating-count {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.2px;
+}
+
+.yt-cinema-rating-count:empty {
+    display: none;
+}
+
+.yt-cinema-comments-btn {
+    width: auto;
+    min-width: 36px;
+    padding: 0 10px;
+    gap: 6px;
+}
+
+.yt-cinema-comments-btn.active {
+    background: var(--ytc-accent-soft);
+    border: 1px solid var(--ytc-accent-border);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-comments-count {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.yt-cinema-comments-count:empty {
+    display: none;
+}
+
+/* ------------------------------------------------------------------ drawer */
+
+.yt-cinema-comments-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(380px, 100%);
+    display: flex;
+    flex-direction: column;
+    background: rgb(var(--ytc-crust-rgb) / 96%);
+    border-left: 1px solid var(--ytc-border);
+    box-shadow: -18px 0 40px var(--ytc-shadow-deep);
+    transform: translateX(102%);
+    visibility: hidden;
+    opacity: 0;
+    z-index: 22;
+    color: var(--ytc-text-primary);
+    font-family: 'Roboto', Arial, sans-serif;
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1),
+                opacity 0.2s ease,
+                visibility 0.25s;
+}
+
+.yt-cinema-comments-panel.yt-cinema-comments-open {
+    transform: translateX(0);
+    visibility: visible;
+    opacity: 1;
+}
+
+.yt-cinema-comments-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ytc-border);
+    flex-shrink: 0;
+}
+
+.yt-cinema-comments-heading {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-comments-total {
+    font-size: 12px;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-comments-total:empty {
+    display: none;
+}
+
+.yt-cinema-comments-close {
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ytc-fill);
+    border: none;
+    border-radius: 6px;
+    color: var(--ytc-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-comments-close:hover {
+    background: var(--ytc-danger-hover);
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-comments-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.yt-cinema-comments-status {
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-comments-status:empty {
+    display: none;
+}
+
+.yt-cinema-comments-status.yt-cinema-comments-status-error {
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-comments-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ytc-fill-hover) transparent;
+}
+
+.yt-cinema-comments-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.yt-cinema-comments-list::-webkit-scrollbar-thumb {
+    background: var(--ytc-fill-hover);
+    border-radius: 4px;
+}
+
+.yt-cinema-comments-more {
+    display: none;
+    margin: 6px 12px 12px;
+    padding: 9px 12px;
+    background: var(--ytc-fill);
+    border: 1px solid var(--ytc-border);
+    border-radius: 8px;
+    color: var(--ytc-text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-comments-more.yt-cinema-comments-more-visible {
+    display: block;
+}
+
+.yt-cinema-comments-more:hover {
+    background: var(--ytc-fill-hover);
+    color: var(--ytc-text-primary);
+}
+
+/* ------------------------------------------------------------ comment rows */
+
+.yt-cinema-comment {
+    display: flex;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ytc-fill-subtle);
+}
+
+.yt-cinema-comment:last-child {
+    border-bottom: none;
+}
+
+.yt-cinema-comment-avatar {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--ytc-fill);
+}
+
+.yt-cinema-comment-avatar.yt-cinema-comment-avatar-empty {
+    display: block;
+    background: var(--ytc-fill-hover);
+}
+
+.yt-cinema-comment-body {
+    min-width: 0;
+    flex: 1;
+}
+
+.yt-cinema-comment-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 3px;
+}
+
+.yt-cinema-comment-author {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ytc-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.yt-cinema-comment-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--ytc-fill-active);
+    color: var(--ytc-text-secondary);
+}
+
+.yt-cinema-comment-time {
+    font-size: 11px;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-comment-text {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ytc-text-secondary);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.yt-cinema-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 5px;
+    font-size: 11px;
+    color: var(--ytc-text-faint);
+}
+
+.yt-cinema-comment-likes {
+    display: inline-flex;
+}
+
+.yt-cinema-comment-replies {
+    display: inline-flex;
+}
+
+/* ------------------------------------------------------- docked / responsive */
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-engagement {
+    gap: 2px;
+    padding-right: 2px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-rating-btn {
+    height: 28px;
+    min-width: 28px;
+    padding: 0 5px;
+    border-radius: 6px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-rating-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-comments-btn {
+    height: 28px;
+    min-width: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+}
+
+/* In a narrow dock there is no room for counts, and the thumbs-down button
+   is the first thing to go. */
+.yt-cinema-container.yt-cinema-docked .yt-cinema-rating-count,
+.yt-cinema-container.yt-cinema-docked .yt-cinema-comments-count {
+    display: none;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-comments-panel {
+    width: 100%;
+    border-left: none;
+}
+
+@container (max-width: 430px) {
+    .yt-cinema-container.yt-cinema-docked .yt-cinema-dislike-btn {
+        display: none;
+    }
+}
+
+/* Vertical Shorts run in a 480px-wide frame: keep the two most useful actions
+   and drop the text so the existing controls still fit. */
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-rating-count,
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-comments-count,
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-dislike-btn {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .yt-cinema-rating-count,
+    .yt-cinema-comments-count {
+        display: none;
+    }
+
+    .yt-cinema-comments-panel {
+        width: 100%;
+        border-left: none;
+    }
+}

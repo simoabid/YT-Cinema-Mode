@@ -26,6 +26,15 @@
         dockBtn: '.yt-cinema-dock-btn',
         prevBtn: '.yt-cinema-prev-btn',
         nextBtn: '.yt-cinema-next-btn',
+        likeBtn: '.yt-cinema-like-btn',
+        dislikeBtn: '.yt-cinema-dislike-btn',
+        commentsBtn: '.yt-cinema-comments-btn',
+        commentsPanel: '.yt-cinema-comments-panel',
+        commentsList: '.yt-cinema-comments-list',
+        commentsTotal: '.yt-cinema-comments-total',
+        commentsMore: '.yt-cinema-comments-more',
+        commentsClose: '.yt-cinema-comments-close',
+        commentsStatus: '.yt-cinema-comments-status',
         speedPill: '.yt-cinema-speed-pill',
         speedMenu: '.yt-cinema-speed-menu',
         qualityPill: '.yt-cinema-quality-pill',
@@ -60,7 +69,7 @@
             isDocked: Boolean(options.startDocked),
             isShort: Boolean(options.isShort),
             currentVideoId: options.videoId,
-            flags: { speedMenuOpen: false, qualityMenuOpen: false },
+            flags: { speedMenuOpen: false, qualityMenuOpen: false, commentsOpen: false },
 
             /** Cached <video>/player pair for the embed, re-resolved when stale. */
             getPlayerElements() {
@@ -95,6 +104,7 @@
         ctx.screenshot = controls.screenshot.createScreenshotControl(ctx);
         ctx.dock = controls.dock.createDockControl(ctx);
         ctx.navigation = controls.navigation.createNavigationControl(ctx);
+        ctx.engagement = controls.engagement.createEngagementControl(ctx);
         ctx.keyboard = controls.keyboard.createKeyboardControl(ctx);
 
         exposeOverlayHooks(overlayElement, ctx);
@@ -209,6 +219,7 @@
         ctx.navigation.bind();
         ctx.autohide.bindHoverTracking();
         ctx.keyboard.bind();
+        ctx.engagement.bind();
 
         els.closeBtn?.addEventListener('click', ctx.close);
         els.pipBtn?.addEventListener('click', () => togglePictureInPicture(ctx));
@@ -315,6 +326,7 @@
         ctx.quality.closeMenu();
         ctx.transport.clearTimers();
         ctx.history.stop();
+        ctx.engagement.dispose();
 
         try {
             const { video } = ctx.getPlayerElements();

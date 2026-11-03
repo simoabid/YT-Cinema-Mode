@@ -56,6 +56,7 @@
             ctx.history.onVideoChanged(newId);
 
             if (newTitle) updateHeaderTitle(newTitle, Boolean(isShortVideo));
+            ctx.engagement?.resetForNewVideo(newId);
         }
 
         function updateHeaderTitle(newTitle, isShortVideo) {
@@ -102,6 +103,7 @@
 
             ctx.history.stop();
             ctx.quality.resetForNewVideo();
+            ctx.engagement?.resetForNewVideo(newId);
             const resume = YTC.progress.resumeTimestamp(newId);
             iframe.src = video.buildPlayerUrl(newId, isShortVideo, resume, true);
         }
