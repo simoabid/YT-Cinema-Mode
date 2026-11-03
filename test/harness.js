@@ -223,6 +223,13 @@ function buildOverlayDom(document) {
     container.appendChild(qualityPill);
     container.appendChild(qualityMenu);
 
+    const subscribeBtn = document.createElement('button');
+    subscribeBtn.className = 'yt-cinema-subscribe-btn';
+    for (const cls of ['yt-cinema-subscribe-icon', 'yt-cinema-subscribe-label', 'yt-cinema-subscribe-count']) {
+        subscribeBtn.appendChild(Object.assign(document.createElement('span'), { className: cls }));
+    }
+    container.appendChild(subscribeBtn);
+
     const likeBtn = document.createElement('button');
     likeBtn.className = 'yt-cinema-rating-btn yt-cinema-like-btn';
     likeBtn.appendChild(Object.assign(document.createElement('span'), {
@@ -283,7 +290,7 @@ function buildOverlayDom(document) {
     iframe.contentWindow = { postMessage() {} };
 
     return { overlay, container, iframe, speedPill, speedMenu, qualityPill, qualityMenu, titleSpan,
-        likeBtn, dislikeBtn, commentsBtn, commentsPanel };
+        subscribeBtn, likeBtn, dislikeBtn, commentsBtn, commentsPanel };
 }
 
 /** A minimal fake YouTube <video> + movie_player pair. */
@@ -365,6 +372,7 @@ function createContext(env, options = {}) {
             dockBtn: dom.container.querySelector('.yt-cinema-dock-btn'),
             prevBtn: dom.container.querySelector('.yt-cinema-prev-btn'),
             nextBtn: dom.container.querySelector('.yt-cinema-next-btn'),
+            subscribeBtn: dom.subscribeBtn,
             likeBtn: dom.likeBtn,
             dislikeBtn: dom.dislikeBtn,
             commentsBtn: dom.commentsBtn,

@@ -25,6 +25,90 @@
     border-right: 1px solid var(--ytc-border);
 }
 
+/* YouTube's own subscribe button sits next to the channel name; here it leads
+   the engagement group and keeps the channel's live subscription state. */
+.yt-cinema-subscribe-btn {
+    height: 36px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ytc-accent-soft);
+    border: 1px solid var(--ytc-accent-border);
+    border-radius: 8px;
+    color: var(--ytc-accent);
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.yt-cinema-subscribe-btn:hover {
+    background: var(--ytc-accent-hover);
+    color: var(--ytc-text-primary);
+    transform: scale(1.03);
+}
+
+.yt-cinema-subscribe-btn.yt-cinema-subscribe-active {
+    background: var(--ytc-fill);
+    border-color: var(--ytc-border);
+    color: var(--ytc-text-secondary);
+    font-weight: 600;
+}
+
+.yt-cinema-subscribe-btn.yt-cinema-subscribe-active:hover {
+    background: var(--ytc-fill-hover);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-subscribe-btn.yt-cinema-subscribe-confirm {
+    background: var(--ytc-danger-soft);
+    border-color: var(--ytc-danger);
+    color: var(--ytc-danger);
+    font-weight: 700;
+}
+
+.yt-cinema-subscribe-btn.yt-cinema-subscribe-confirm:hover {
+    background: var(--ytc-danger-hover);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-subscribe-btn.yt-cinema-subscribe-hidden {
+    display: none;
+}
+
+.yt-cinema-subscribe-icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+.yt-cinema-subscribe-icon:empty {
+    display: none;
+}
+
+.yt-cinema-subscribe-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.yt-cinema-subscribe-label {
+    line-height: 1;
+}
+
+.yt-cinema-subscribe-count {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-subscribe-count:empty {
+    display: none;
+}
+
 .yt-cinema-rating-btn {
     height: 36px;
     min-width: 36px;
@@ -354,9 +438,23 @@
     border-radius: 6px;
 }
 
+.yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-btn {
+    height: 28px;
+    padding: 0 8px;
+    gap: 4px;
+    border-radius: 6px;
+    font-size: 11px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-icon svg {
+    width: 12px;
+    height: 12px;
+}
+
 /* In a narrow dock there is no room for counts, and the thumbs-down button
    is the first thing to go. */
 .yt-cinema-container.yt-cinema-docked .yt-cinema-rating-count,
+.yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-count,
 .yt-cinema-container.yt-cinema-docked .yt-cinema-comments-count {
     display: none;
 }
@@ -370,18 +468,42 @@
     .yt-cinema-container.yt-cinema-docked .yt-cinema-dislike-btn {
         display: none;
     }
+
+    .yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-btn.yt-cinema-subscribe-active .yt-cinema-subscribe-label {
+        display: none;
+    }
+
+    .yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-btn.yt-cinema-subscribe-active {
+        padding: 0 6px;
+    }
+}
+
+@container (max-width: 380px) {
+    .yt-cinema-container.yt-cinema-docked .yt-cinema-subscribe-btn {
+        display: none;
+    }
 }
 
 /* Vertical Shorts run in a 480px-wide frame: keep the two most useful actions
    and drop the text so the existing controls still fit. */
 .yt-cinema-container.yt-cinema-shorts .yt-cinema-rating-count,
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-subscribe-count,
 .yt-cinema-container.yt-cinema-shorts .yt-cinema-comments-count,
 .yt-cinema-container.yt-cinema-shorts .yt-cinema-dislike-btn {
     display: none;
 }
 
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-subscribe-btn.yt-cinema-subscribe-active .yt-cinema-subscribe-label {
+    display: none;
+}
+
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-subscribe-btn.yt-cinema-subscribe-active {
+    padding: 0 6px;
+}
+
 @media (max-width: 768px) {
     .yt-cinema-rating-count,
+    .yt-cinema-subscribe-count,
     .yt-cinema-comments-count {
         display: none;
     }

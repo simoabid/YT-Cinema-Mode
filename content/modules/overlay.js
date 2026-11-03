@@ -126,6 +126,7 @@
             </div>
             <div class="yt-cinema-controls">
                 <div class="yt-cinema-engagement">
+                    <button class="yt-cinema-subscribe-btn yt-cinema-subscribe-hidden" title="Subscribe" aria-pressed="false"><span class="yt-cinema-subscribe-icon"></span><span class="yt-cinema-subscribe-label">Subscribe</span><span class="yt-cinema-subscribe-count"></span></button>
                     <button class="yt-cinema-rating-btn yt-cinema-like-btn" title="Like this video" aria-pressed="false">${icons.thumbsUp}<span class="yt-cinema-rating-count"></span></button>
                     <button class="yt-cinema-rating-btn yt-cinema-dislike-btn" title="Dislike this video" aria-pressed="false">${icons.thumbsDown}</button>
                     <button class="yt-cinema-btn yt-cinema-comments-btn" title="Comments (Shift+C)">${icons.comment}<span class="yt-cinema-comments-count"></span></button>

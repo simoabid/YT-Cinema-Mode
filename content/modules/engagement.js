@@ -1,6 +1,7 @@
 /**
  * Engagement — reads and changes the things the embedded player cannot show:
- * the like/dislike state of a video and its comments.
+ * the like/dislike state of a video, its comments and its channel's
+ * subscription.
  *
  * The embed iframe is a stripped-down WEB_EMBEDDED_PLAYER surface: no like
  * buttons, no comment section, no counts. So this module asks YouTube's own
@@ -13,6 +14,8 @@
  *   - `fetchComments(token)` → one page of comments (top level, newest first,
  *     as YouTube returns them) plus the token for the next page.
  *   - `rateVideo(videoId, rating)` → like / dislike / remove a rating.
+ *   - `setSubscribed(channelId, subscribe)` → subscribe / unsubscribe the
+ *     video's channel and return the new subscriber count.
  *
  * Parsing is deliberately shape-tolerant: YouTube moves these payloads between
  * renderer names fairly often, so the extractors walk for the fields they know
@@ -30,6 +33,14 @@
         dislike: '/youtubei/v1/like/dislike',
         none: '/youtubei/v1/like/removelike'
     };
+
+    /** Subscribing is a pair of commands on the channel rather than the video. */
+    const SUBSCRIBE_ENDPOINTS = {
+        subscribe: '/youtubei/v1/subscription/subscribe',
+        unsubscribe: '/youtubei/v1/subscription/unsubscribe'
+    };
+
+    const BROWSE_ENDPOINT = '/youtubei/v1/browse';
 
     const MAX_WALK_DEPTH = 48;
     const COUNT_SUFFIXES = { K: 1e3, M: 1e6, B: 1e9 };
@@ -363,6 +374,107 @@
         return { comments, continuation };
     }
 
+    // --------------------------------------------------------------- channel
+
+    /** `18.9M subscribers` → `18.9M`; a count label without digits is dropped. */
+    function normalizeSubscriberText(value) {
+        const text = readText(value).trim();
+        if (!text) return '';
+        const match = /(\d[\d.,]*\s*(?:Tsd\.?|Mio\.?|Mrd\.?|[KMBkmb])?)/i.exec(text);
+        return match ? match[1].replace(/\s+/g, '') : '';
+    }
+
+    function browseIdOf(node) {
+        const host = findFirst(node, (n) => n.browseEndpoint && n.browseEndpoint.browseId);
+        return host ? host.browseEndpoint.browseId : null;
+    }
+
+    /**
+     * Read the owner channel of a payload: who it is, how many subscribers it
+     * has and whether the viewer is subscribed. The watch page keeps that on
+     * the owner renderer, the channel page on a header subscribe button, and
+     * some payloads only carry a subscription state entity — all are walked
+     * for, so a single extractor serves both pages.
+     *
+     * `subscribed` stays null when the payload does not say, which lets the
+     * caller ask the channel page instead of guessing.
+     */
+    function extractChannel(data) {
+        if (!data) return null;
+
+        const buttonHost = findFirst(data, (node) => node.subscribeButtonRenderer);
+        const button = buttonHost ? buttonHost.subscribeButtonRenderer : null;
+
+        const stateHost = findFirst(data, (node) =>
+            node.subscriptionStateEntity ||
+            (typeof node.subscribed === 'boolean' && Boolean(node.channelId)));
+        const state = stateHost ? (stateHost.subscriptionStateEntity || stateHost) : null;
+
+        const ownerHost = findFirst(data, (node) => node.videoOwnerRenderer);
+        const owner = ownerHost ? ownerHost.videoOwnerRenderer : null;
+
+        const channelId = (button && button.channelId)
+            || (state && state.channelId)
+            || (owner && (owner.channelId || browseIdOf(owner)))
+            || null;
+        if (!channelId) return null;
+
+        let subscribed = null;
+        if (button && typeof button.subscribed === 'boolean') subscribed = button.subscribed;
+        else if (state && typeof state.subscribed === 'boolean') subscribed = state.subscribed;
+
+        return {
+            id: channelId,
+            name: readText(owner && owner.title) || (button && readText(button.channelName)) || '',
+            subscribed,
+            subscriberCountText: normalizeSubscriberText(
+                (button && (button.subscriberCountText || button.longSubscriberCountText))
+                || (state && state.subscriberCountText)
+                || (owner && owner.subscriberCountText)
+            )
+        };
+    }
+
+    /** The subscribe/unsubscribe reply carries the new count (and sometimes state). */
+    function extractSubscriptionResult(data) {
+        if (!data) return { subscribed: null, subscriberCountText: '' };
+
+        const buttonHost = findFirst(data, (node) => node.subscribeButtonRenderer);
+        const button = buttonHost ? buttonHost.subscribeButtonRenderer : null;
+        if (button) {
+            return {
+                subscribed: typeof button.subscribed === 'boolean' ? button.subscribed : null,
+                subscriberCountText: normalizeSubscriberText(button.subscriberCountText)
+            };
+        }
+
+        const countHost = findFirst(data, (node) => node.subscriberCountText);
+        return {
+            subscribed: null,
+            subscriberCountText: normalizeSubscriberText(countHost && countHost.subscriberCountText)
+        };
+    }
+
+    /** Subscription state from the channel page, for payloads without a button. */
+    async function fetchChannelSubscription(channelId) {
+        if (!channelId) return { ok: false, reason: 'no-channel' };
+
+        const cfg = YTC.innertube.readConfig();
+        if (!cfg) return { ok: false, reason: 'no-config' };
+
+        const res = await YTC.innertube.post(BROWSE_ENDPOINT, {
+            context: cfg.context,
+            browseId: channelId
+        }, { cfg, signed: true });
+
+        if (!res.ok) return { ok: false, reason: 'http', status: res.status };
+
+        const channel = extractChannel(res.data);
+        if (!channel || channel.subscribed === null) return { ok: false, reason: 'empty' };
+
+        return { ok: true, channel: { ...channel, id: channelId } };
+    }
+
     // -------------------------------------------------------------- requests
 
     async function fetchVideoEngagement(videoId) {
@@ -381,7 +493,25 @@
         const engagement = extractEngagement(res.data);
         if (!engagement) return { ok: false, reason: 'empty' };
 
-        return { ok: true, engagement };
+        // The watch page usually carries the subscribe button, but when it does
+        // not the channel page is the only place that knows the state.
+        let channel = extractChannel(res.data);
+        if (channel && channel.subscribed === null) {
+            if (cfg.loggedIn === false) {
+                channel = { ...channel, subscribed: false };
+            } else {
+                const state = await fetchChannelSubscription(channel.id);
+                if (state.ok) {
+                    channel = {
+                        ...channel,
+                        subscribed: state.channel.subscribed,
+                        subscriberCountText: channel.subscriberCountText || state.channel.subscriberCountText
+                    };
+                }
+            }
+        }
+
+        return { ok: true, engagement, channel };
     }
 
     async function fetchComments(continuation) {
@@ -422,12 +552,44 @@
         return { ok: true, rating };
     }
 
+    /** Subscribe to or unsubscribe from a channel. */
+    async function setSubscribed(channelId, subscribe) {
+        const endpoint = subscribe ? SUBSCRIBE_ENDPOINTS.subscribe : SUBSCRIBE_ENDPOINTS.unsubscribe;
+        if (!channelId) return { ok: false, reason: 'bad-request' };
+
+        const cfg = YTC.innertube.readConfig();
+        if (!cfg) return { ok: false, reason: 'no-config' };
+        if (cfg.loggedIn === false) return { ok: false, reason: 'signed-out' };
+
+        const auth = await YTC.innertube.requestAuth(cfg);
+        if (!auth) return { ok: false, reason: 'signed-out' };
+
+        const res = await YTC.innertube.post(endpoint, {
+            context: cfg.context,
+            channelIds: [channelId]
+        }, { cfg, auth });
+
+        if (!res.ok) return { ok: false, reason: 'http', status: res.status };
+
+        const result = extractSubscriptionResult(res.data);
+        return {
+            ok: true,
+            subscribed: result.subscribed === null ? Boolean(subscribe) : result.subscribed,
+            subscriberCountText: result.subscriberCountText
+        };
+    }
+
     YTC.engagement = {
         fetchVideoEngagement,
         fetchComments,
         rateVideo,
+        setSubscribed,
+        fetchChannelSubscription,
         extractEngagement,
         extractComments,
+        extractChannel,
+        extractSubscriptionResult,
+        normalizeSubscriberText,
         formatCount,
         parseCount
     };

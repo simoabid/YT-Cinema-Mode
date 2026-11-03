@@ -82,6 +82,38 @@ const ENGAGEMENT_DATA = {
     }
 };
 
+const CHANNEL_DATA = {
+    contents: {
+        twoColumnWatchNextResults: {
+            results: {
+                results: {
+                    contents: [{
+                        videoSecondaryInfoRenderer: {
+                            owner: {
+                                videoOwnerRenderer: {
+                                    title: { runs: [{ text: 'Rick Astley' }] },
+                                    channelId: 'UCuAXFkgsw1L7xaCfnd5JJOw',
+                                    subscriberCountText: { simpleText: '18.9M subscribers' },
+                                    navigationEndpoint: {
+                                        browseEndpoint: { browseId: 'UCuAXFkgsw1L7xaCfnd5JJOw' }
+                                    },
+                                    subscribeButton: {
+                                        subscribeButtonRenderer: {
+                                            channelId: 'UCuAXFkgsw1L7xaCfnd5JJOw',
+                                            subscribed: true,
+                                            subscriberCountText: { simpleText: '18.9M subscribers' }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }]
+                }
+            }
+        }
+    }
+};
+
 const COMMENTS_DATA = {
     onResponseReceivedEndpoints: [{
         appendContinuationItemsAction: {
@@ -150,7 +182,11 @@ const COMMENTS_DATA = {
 
 function setupControl(overrides = {}) {
     const env = loadExtension();
-    const calls = { ratings: [], commentTokens: [] };
+    const calls = { ratings: [], commentTokens: [], subscriptions: [] };
+
+    const channel = overrides.channel === undefined
+        ? { id: 'UCchannel', name: 'Test Channel', subscribed: false, subscriberCountText: '12K' }
+        : overrides.channel;
 
     env.YTC.engagement.fetchVideoEngagement = overrides.engagement || (async () => ({
         ok: true,
@@ -161,8 +197,14 @@ function setupControl(overrides = {}) {
             commentCountText: '2',
             commentCount: 2,
             continuation: 'T1'
-        }
+        },
+        channel
     }));
+
+    env.YTC.engagement.setSubscribed = overrides.subscribe || (async (channelId, subscribe) => {
+        calls.subscriptions.push({ channelId, subscribe });
+        return { ok: true, subscribed: subscribe, subscriberCountText: '12K' };
+    });
 
     env.YTC.engagement.fetchComments = overrides.comments || (async (token) => {
         calls.commentTokens.push(token);
@@ -196,6 +238,8 @@ function setupControl(overrides = {}) {
 
 const likeCountText = (ctx) => ctx.els.likeBtn.querySelector('.yt-cinema-rating-count').textContent;
 const commentCountText = (ctx) => ctx.els.commentsBtn.querySelector('.yt-cinema-comments-count').textContent;
+const subscribeLabel = (ctx) => ctx.els.subscribeBtn.querySelector('.yt-cinema-subscribe-label').textContent;
+const subscribeCount = (ctx) => ctx.els.subscribeBtn.querySelector('.yt-cinema-subscribe-count').textContent;
 
 describe('engagement payload parsing', () => {
     it('reads the like state, the exact count and the comment continuation', () => {
@@ -307,6 +351,24 @@ describe('engagement payload parsing', () => {
         for (const [input, expected] of cases) {
             const actual = env.YTC.engagement.parseCount(input);
             if (actual !== expected) throw new Error(`parseCount(${input}) = ${actual}, expected ${expected}`);
+        }
+    });
+
+    it('normalizes subscriber text including European suffixes', () => {
+        const env = loadExtension();
+        const cases = [
+            ['18.9M subscribers', '18.9M'],
+            ['1.4K subscribers', '1.4K'],
+            ['12K', '12K'],
+            ['1,4 Tsd. Abonnenten', '1,4Tsd.'],
+            ['18,9 Mio. Abonnenten', '18,9Mio.'],
+            ['1,2 Mrd. Abonnenten', '1,2Mrd.'],
+            ['1000', '1000'],
+            ['Subscribers', '']
+        ];
+        for (const [input, expected] of cases) {
+            const actual = env.YTC.engagement.normalizeSubscriberText(input);
+            if (actual !== expected) throw new Error(`normalizeSubscriberText(${input}) = ${actual}, expected ${expected}`);
         }
     });
 });
@@ -559,6 +621,289 @@ describe('engagement control', () => {
         }
         if (!img.classList.contains('yt-cinema-comment-avatar-empty')) {
             throw new Error('empty fallback class was not added for invalid avatar URL');
+        }
+    });
+});
+
+describe('subscribe', () => {
+    it('reads the owner channel and its subscription state', () => {
+        const env = loadExtension();
+        const channel = env.YTC.engagement.extractChannel(CHANNEL_DATA);
+
+        if (!channel) throw new Error('no channel was extracted');
+        if (channel.id !== 'UCuAXFkgsw1L7xaCfnd5JJOw') throw new Error(`wrong channel: ${channel.id}`);
+        if (channel.name !== 'Rick Astley') throw new Error(`wrong channel name: ${channel.name}`);
+        if (channel.subscribed !== true) throw new Error('subscription state was lost');
+        if (channel.subscriberCountText !== '18.9M') {
+            throw new Error(`wrong subscriber label: ${channel.subscriberCountText}`);
+        }
+    });
+
+    it('leaves the state unknown when the payload carries no subscribe button', () => {
+        const env = loadExtension();
+        const data = JSON.parse(JSON.stringify(CHANNEL_DATA));
+        delete data.contents.twoColumnWatchNextResults.results.results.contents[0]
+            .videoSecondaryInfoRenderer.owner.videoOwnerRenderer.subscribeButton;
+
+        const channel = env.YTC.engagement.extractChannel(data);
+        if (!channel) throw new Error('the channel was dropped with its button');
+        if (channel.subscribed !== null) throw new Error(`guessed a state: ${channel.subscribed}`);
+        if (channel.subscriberCountText !== '18.9M') throw new Error('the subscriber count was lost');
+    });
+
+    it('finds browseId in nested navigation endpoints', () => {
+        const env = loadExtension();
+        const payload = {
+            contents: {
+                twoColumnWatchNextResults: {
+                    results: {
+                        results: {
+                            contents: [{
+                                videoSecondaryInfoRenderer: {
+                                    owner: {
+                                        videoOwnerRenderer: {
+                                            title: {
+                                                runs: [{
+                                                    text: 'Channel Name',
+                                                    navigationEndpoint: {
+                                                        browseEndpoint: { browseId: 'UCnested123' }
+                                                    }
+                                                }]
+                                            }
+                                        }
+                                    }
+                                }
+                            }]
+                        }
+                    }
+                }
+            }
+        };
+        const channel = env.YTC.engagement.extractChannel(payload);
+        if (!channel || channel.id !== 'UCnested123') {
+            throw new Error(`failed to extract nested browseId: ${channel && channel.id}`);
+        }
+    });
+
+    it('sends subscribe and unsubscribe to the matching endpoints', async () => {
+        const env = loadExtension();
+        const posts = [];
+        env.YTC.innertube.readConfig = () => ({ context: { client: {} }, apiKey: 'k', loggedIn: true });
+        env.YTC.innertube.requestAuth = async () => ({ authorization: 'SAPISIDHASH x', authUser: '0' });
+        env.YTC.innertube.post = async (endpoint, body, options) => {
+            posts.push({ endpoint, body, options });
+            return { ok: true, data: { subscriberCountText: { simpleText: '18.9M subscribers' } } };
+        };
+
+        const subscribed = await env.YTC.engagement.setSubscribed('UCabc', true);
+        if (!subscribed.ok || subscribed.subscribed !== true) {
+            throw new Error(`subscribe did not report success: ${JSON.stringify(subscribed)}`);
+        }
+        if (posts[0].endpoint !== '/youtubei/v1/subscription/subscribe') {
+            throw new Error(`wrong endpoint: ${posts[0].endpoint}`);
+        }
+        if (!posts[0].body.channelIds || posts[0].body.channelIds[0] !== 'UCabc') {
+            throw new Error('the channel id was not sent');
+        }
+        if (!posts[0].options.auth) throw new Error('subscribe was not authenticated');
+
+        const unsubscribed = await env.YTC.engagement.setSubscribed('UCabc', false);
+        if (posts[1].endpoint !== '/youtubei/v1/subscription/unsubscribe') {
+            throw new Error(`wrong endpoint: ${posts[1].endpoint}`);
+        }
+        if (unsubscribed.subscribed !== false) throw new Error('unsubscribe did not report the new state');
+        if (unsubscribed.subscriberCountText !== '18.9M') {
+            throw new Error(`wrong subscriber label: ${unsubscribed.subscriberCountText}`);
+        }
+    });
+
+    it('refuses to subscribe when the session is signed out', async () => {
+        const env = loadExtension();
+        env.YTC.innertube.readConfig = () => ({ context: { client: {} }, apiKey: 'k', loggedIn: false });
+
+        const result = await env.YTC.engagement.setSubscribed('UCabc', true);
+        if (result.ok || result.reason !== 'signed-out') {
+            throw new Error(`unexpected result: ${JSON.stringify(result)}`);
+        }
+    });
+
+    it('asks the channel page when the watch payload has no subscribe button', async () => {
+        const env = loadExtension();
+        const endpoints = [];
+        env.YTC.innertube.readConfig = () => ({ context: { client: {} }, apiKey: 'key' });
+        env.YTC.innertube.post = async (endpoint) => {
+            endpoints.push(endpoint);
+            if (endpoint === '/youtubei/v1/next') {
+                return {
+                    ok: true,
+                    data: { videoOwnerRenderer: { channelId: 'UCabc', title: { simpleText: 'Chan' } } }
+                };
+            }
+            return {
+                ok: true,
+                data: {
+                    header: {
+                        subscribeButtonRenderer: {
+                            channelId: 'UCabc',
+                            subscribed: true,
+                            subscriberCountText: { simpleText: '1.2K subscribers' }
+                        }
+                    }
+                }
+            };
+        };
+
+        const result = await env.YTC.engagement.fetchVideoEngagement('vid');
+        if (endpoints[0] !== '/youtubei/v1/next' || endpoints[1] !== '/youtubei/v1/browse') {
+            throw new Error(`unexpected requests: ${endpoints.join(', ')}`);
+        }
+        if (!result.channel || result.channel.subscribed !== true) {
+            throw new Error('the subscription state was not resolved');
+        }
+        if (result.channel.subscriberCountText !== '1.2K') {
+            throw new Error(`wrong subscriber label: ${result.channel.subscriberCountText}`);
+        }
+    });
+
+    it('skips channel browse request when user is signed out', async () => {
+        const env = loadExtension();
+        const endpoints = [];
+        env.YTC.innertube.readConfig = () => ({ context: { client: {} }, apiKey: 'key', loggedIn: false });
+        env.YTC.innertube.post = async (endpoint) => {
+            endpoints.push(endpoint);
+            return {
+                ok: true,
+                data: { videoOwnerRenderer: { channelId: 'UCabc', title: { simpleText: 'Chan' } } }
+            };
+        };
+
+        const result = await env.YTC.engagement.fetchVideoEngagement('vid');
+        if (endpoints.length !== 1 || endpoints[0] !== '/youtubei/v1/next') {
+            throw new Error(`expected only next endpoint, got: ${endpoints.join(', ')}`);
+        }
+        if (!result.channel || result.channel.subscribed !== false) {
+            throw new Error('signed-out channel should default to subscribed: false');
+        }
+    });
+
+    it('subscribes from the header pill and requires confirmation to unsubscribe', async () => {
+        const { ctx, calls } = setupControl();
+        await wait(5);
+
+        if (subscribeLabel(ctx) !== 'Subscribe') throw new Error(`wrong initial label: ${subscribeLabel(ctx)}`);
+        if (subscribeCount(ctx) !== '12K') throw new Error(`wrong subscriber count: ${subscribeCount(ctx)}`);
+        if (ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-hidden')) {
+            throw new Error('the pill is hidden although the channel is known');
+        }
+
+        // 1. Subscribe click
+        ctx.els.subscribeBtn.click();
+        await wait(5);
+
+        if (calls.subscriptions.length !== 1) throw new Error('no subscribe request was sent');
+        if (calls.subscriptions[0].channelId !== 'UCchannel') throw new Error('subscribed to the wrong channel');
+        if (!calls.subscriptions[0].subscribe) throw new Error('subscribed in the wrong direction');
+        if (subscribeLabel(ctx) !== 'Subscribed') throw new Error(`label did not flip: ${subscribeLabel(ctx)}`);
+        if (!ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-active')) {
+            throw new Error('the subscribed state is not styled');
+        }
+        if (ctx.els.subscribeBtn.getAttribute('aria-pressed') !== 'true') {
+            throw new Error('aria-pressed was not updated');
+        }
+        if (!ctx.toast.shown.some((message) => /Subscribed to Test Channel/.test(message))) {
+            throw new Error(`no confirmation toast: ${ctx.toast.shown.join(' | ')}`);
+        }
+
+        // 2. First click while subscribed: enters confirmation state
+        ctx.els.subscribeBtn.click();
+        await wait(5);
+
+        if (calls.subscriptions.length !== 1) {
+            throw new Error('first click while subscribed should not unsubscribe immediately');
+        }
+        if (subscribeLabel(ctx) !== 'Unsubscribe?') {
+            throw new Error(`label did not enter confirmation: ${subscribeLabel(ctx)}`);
+        }
+        if (!ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-confirm')) {
+            throw new Error('button is missing confirmation class');
+        }
+
+        // 3. Second click confirms unsubscribe
+        ctx.els.subscribeBtn.click();
+        await wait(5);
+
+        if (!calls.subscriptions[1] || calls.subscriptions[1].subscribe) {
+            throw new Error('the second click did not unsubscribe');
+        }
+        if (subscribeLabel(ctx) !== 'Subscribe') throw new Error(`label did not revert: ${subscribeLabel(ctx)}`);
+        if (ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-confirm')) {
+            throw new Error('confirmation class was not removed');
+        }
+        if (!ctx.toast.shown.some((message) => /Unsubscribed from Test Channel/.test(message))) {
+            throw new Error(`no unsubscribe toast: ${ctx.toast.shown.join(' | ')}`);
+        }
+    });
+
+    it('reverts confirmation state if not confirmed after blur', async () => {
+        const { ctx, calls } = setupControl({
+            channel: { id: 'UCchannel', name: 'Test Channel', subscribed: true, subscriberCountText: '12K' }
+        });
+        await wait(5);
+
+        if (subscribeLabel(ctx) !== 'Subscribed') throw new Error(`wrong initial label: ${subscribeLabel(ctx)}`);
+
+        // Click once to enter confirmation
+        ctx.els.subscribeBtn.click();
+        await wait(5);
+
+        if (subscribeLabel(ctx) !== 'Unsubscribe?') throw new Error('did not enter confirmation');
+
+        // Blur event triggers revert
+        ctx.els.subscribeBtn.dispatchEvent(new Event('blur'));
+        await wait(250);
+
+        if (subscribeLabel(ctx) !== 'Subscribed') throw new Error(`did not revert after blur: ${subscribeLabel(ctx)}`);
+        if (calls.subscriptions.length !== 0) throw new Error('unexpected unsubscribe sent');
+    });
+
+    it('rolls back a subscription YouTube rejects', async () => {
+        const { ctx } = setupControl({ subscribe: async () => ({ ok: false, reason: 'signed-out' }) });
+        await wait(5);
+
+        ctx.els.subscribeBtn.click();
+        await wait(5);
+
+        if (subscribeLabel(ctx) !== 'Subscribe') {
+            throw new Error(`the optimistic state survived: ${subscribeLabel(ctx)}`);
+        }
+        if (ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-active')) {
+            throw new Error('the active style survived the rejection');
+        }
+        if (ctx.els.subscribeBtn.getAttribute('aria-pressed') !== 'false') {
+            throw new Error('aria-pressed was not rolled back');
+        }
+        if (!ctx.toast.shown.some((message) => /Sign in to YouTube to subscribe/.test(message))) {
+            throw new Error(`no sign-in feedback: ${ctx.toast.shown.join(' | ')}`);
+        }
+    });
+
+    it('hides the pill when the payload names no channel', async () => {
+        const { ctx } = setupControl({ channel: null });
+        await wait(5);
+
+        if (!ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-hidden')) {
+            throw new Error('the pill is visible without a channel');
+        }
+    });
+
+    it('hides the pill when channel subscribed is null (e.g. own channel)', async () => {
+        const { ctx } = setupControl({
+            channel: { id: 'UCchannel', name: 'Own Channel', subscribed: null, subscriberCountText: '100' }
+        });
+        await wait(5);
+
+        if (!ctx.els.subscribeBtn.classList.contains('yt-cinema-subscribe-hidden')) {
+            throw new Error('the pill is visible when subscribed is null');
         }
     });
 });

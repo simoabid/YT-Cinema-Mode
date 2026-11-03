@@ -5,6 +5,7 @@
  * YouTube's web API through `YTC.engagement` and paints the result into chrome
  * that belongs to us:
  *
+ *   - a subscribe pill that follows and changes the channel's subscription,
  *   - header pills for like / dislike (with the like count) and comments,
  *   - a sliding comment panel inside the player wrapper, so the video keeps
  *     playing and keeps its exact size while comments are open.
@@ -20,6 +21,14 @@
         'signed-out': 'Sign in to YouTube to like or dislike videos',
         'no-config': 'YouTube data is unavailable right now',
         'bad-request': 'That video cannot be rated right now',
+        http: 'YouTube rejected that request',
+        network: 'Network error — check your connection'
+    };
+
+    const SUBSCRIBE_ERRORS = {
+        'signed-out': 'Sign in to YouTube to subscribe',
+        'no-config': 'YouTube data is unavailable right now',
+        'bad-request': 'That channel cannot be subscribed to right now',
         http: 'YouTube rejected that request',
         network: 'Network error — check your connection'
     };
@@ -42,6 +51,14 @@
         let commentTotal = '';
         let continuation = null;
 
+        let channelId = null;
+        let channelName = '';
+        let subscribed = null;
+        let subscriberText = '';
+        let subscribeBusy = false;
+        let confirmingUnsubscribe = false;
+        let confirmTimer = null;
+
         let ratingBusy = false;
         let commentsLoaded = false;
         let commentsLoading = false;
@@ -49,6 +66,21 @@
         let requestSeq = 0;
 
         // ------------------------------------------------------- presentation
+
+        function clearConfirmTimer() {
+            if (confirmTimer) {
+                clearTimeout(confirmTimer);
+                confirmTimer = null;
+            }
+        }
+
+        function resetUnsubscribeConfirm() {
+            clearConfirmTimer();
+            if (confirmingUnsubscribe) {
+                confirmingUnsubscribe = false;
+                renderSubscribe();
+            }
+        }
 
         function renderRating() {
             const countEl = els.likeBtn?.querySelector('.yt-cinema-rating-count');
@@ -64,6 +96,112 @@
             if (els.dislikeBtn) {
                 els.dislikeBtn.setAttribute('title', rating === 'dislike' ? 'Remove dislike' : 'Dislike this video');
                 els.dislikeBtn.setAttribute('aria-pressed', rating === 'dislike' ? 'true' : 'false');
+            }
+        }
+
+        // ---------------------------------------------------------- subscribe
+
+        function renderSubscribe() {
+            const btn = els.subscribeBtn;
+            if (!btn) return;
+
+            // Nothing to subscribe to until the payload names a channel and allows subscribing.
+            const isSubscribable = Boolean(channelId && subscribed !== null);
+            btn.classList.toggle('yt-cinema-subscribe-hidden', !isSubscribable);
+            btn.classList.toggle('yt-cinema-subscribe-active', subscribed === true);
+            btn.classList.toggle('yt-cinema-subscribe-confirm', confirmingUnsubscribe);
+            btn.setAttribute('aria-pressed', subscribed === true ? 'true' : 'false');
+
+            const name = channelName || 'this channel';
+            if (confirmingUnsubscribe) {
+                btn.setAttribute('title', `Unsubscribe from ${name}? Click again to confirm`);
+            } else {
+                btn.setAttribute('title', subscribed ? `Unsubscribe from ${name}` : `Subscribe to ${name}`);
+            }
+
+            const iconEl = btn.querySelector('.yt-cinema-subscribe-icon');
+            if (iconEl) {
+                iconEl.innerHTML = confirmingUnsubscribe
+                    ? (icons.alertSmall || '')
+                    : (subscribed ? icons.successSmall : '');
+            }
+
+            const labelEl = btn.querySelector('.yt-cinema-subscribe-label');
+            if (labelEl) {
+                labelEl.textContent = confirmingUnsubscribe
+                    ? 'Unsubscribe?'
+                    : (subscribed ? 'Subscribed' : 'Subscribe');
+            }
+
+            const countEl = btn.querySelector('.yt-cinema-subscribe-count');
+            if (countEl) countEl.textContent = subscriberText || '';
+        }
+
+        function applyChannel(channel) {
+            channelId = channel.id || null;
+            channelName = channel.name || '';
+            subscribed = typeof channel.subscribed === 'boolean' ? channel.subscribed : null;
+            subscriberText = channel.subscriberCountText || '';
+            renderSubscribe();
+        }
+
+        async function toggleSubscribe() {
+            if (subscribeBusy || !channelId || !videoId || subscribed === null) return;
+
+            // When currently subscribed, require an explicit second click to confirm
+            // unsubscribe (just like native YouTube).
+            if (subscribed && !confirmingUnsubscribe) {
+                confirmingUnsubscribe = true;
+                clearConfirmTimer();
+                confirmTimer = setTimeout(() => {
+                    resetUnsubscribeConfirm();
+                }, 3500);
+                renderSubscribe();
+                ctx.autohide?.reset();
+                return;
+            }
+
+            clearConfirmTimer();
+            confirmingUnsubscribe = false;
+
+            const target = !subscribed;
+            const previous = { subscribed, subscriberText };
+            const targetChannelId = channelId;
+            const targetVideoId = videoId;
+            const seq = requestSeq;
+
+            subscribeBusy = true;
+            subscribed = target;
+            renderSubscribe();
+            ctx.autohide?.reset();
+
+            try {
+                const result = await YTC.engagement.setSubscribed(targetChannelId, target);
+
+                // The video changed while the request was in flight: the new video's
+                // channel owns the pill now, so neither the result nor a rollback
+                // may be applied to it.
+                if (targetVideoId !== videoId || seq !== requestSeq) return;
+
+                if (!result.ok) {
+                    subscribed = previous.subscribed;
+                    subscriberText = previous.subscriberText;
+                    renderSubscribe();
+                    ctx.toast?.show(SUBSCRIBE_ERRORS[result.reason] || SUBSCRIBE_ERRORS.http, icons.alertSmall);
+                    return;
+                }
+
+                subscribed = Boolean(result.subscribed);
+                if (result.subscriberCountText) subscriberText = result.subscriberCountText;
+                renderSubscribe();
+
+                const name = channelName || 'this channel';
+                ctx.toast?.show(
+                    subscribed ? `Subscribed to ${name}` : `Unsubscribed from ${name}`,
+                    subscribed ? icons.successSmall : icons.info
+                );
+            } finally {
+                subscribeBusy = false;
             }
         }
 
@@ -214,7 +352,7 @@
                     return;
                 }
 
-                applyEngagement(result.engagement);
+                applyEngagement(result.engagement, result.channel);
                 commentsLoaded = true;
 
                 if (!result.engagement.continuation) {
@@ -305,7 +443,7 @@
             ctx.autohide?.reset();
         }
 
-        function applyEngagement(info) {
+        function applyEngagement(info, channel) {
             rating = info.rating || RATING_NONE;
             likeExact = info.likeExact === undefined ? null : info.likeExact;
             likeShort = info.likeShort || (likeExact !== null ? YTC.engagement.formatCount(likeExact) : '');
@@ -313,6 +451,7 @@
             continuation = info.continuation || null;
 
             renderRating();
+            if (channel) applyChannel(channel);
             updateCommentsCount();
             updateMoreButton();
         }
@@ -322,17 +461,24 @@
             videoId = nextVideoId || ctx.currentVideoId || null;
 
             const seq = ++requestSeq;
+            resetUnsubscribeConfirm();
+            subscribeBusy = false;
             rating = RATING_NONE;
             likeExact = null;
             likeShort = '';
             commentTotal = '';
             continuation = null;
+            channelId = null;
+            channelName = '';
+            subscribed = null;
+            subscriberText = '';
             commentsLoaded = false;
             commentsLoading = false;
 
             if (els.commentsList) els.commentsList.innerHTML = '';
             setStatus('');
             renderRating();
+            renderSubscribe();
             updateCommentsCount();
             updateMoreButton();
 
@@ -346,7 +492,7 @@
                 return;
             }
 
-            applyEngagement(result.engagement);
+            applyEngagement(result.engagement, result.channel);
 
             if (!isOpen()) return;
             if (result.engagement.continuation) {
@@ -357,6 +503,17 @@
         }
 
         function bind() {
+            els.subscribeBtn?.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleSubscribe();
+            });
+            els.subscribeBtn?.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (confirmingUnsubscribe) {
+                        resetUnsubscribeConfirm();
+                    }
+                }, 200);
+            });
             els.likeBtn?.addEventListener('click', (event) => {
                 event.stopPropagation();
                 rate('like');
@@ -382,6 +539,9 @@
         }
 
         function dispose() {
+            clearConfirmTimer();
+            confirmingUnsubscribe = false;
+            subscribeBusy = false;
             requestSeq++;
             flags.commentsOpen = false;
             els.commentsPanel?.classList.remove('yt-cinema-comments-open');

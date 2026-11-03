@@ -26,6 +26,7 @@
         dockBtn: '.yt-cinema-dock-btn',
         prevBtn: '.yt-cinema-prev-btn',
         nextBtn: '.yt-cinema-next-btn',
+        subscribeBtn: '.yt-cinema-subscribe-btn',
         likeBtn: '.yt-cinema-like-btn',
         dislikeBtn: '.yt-cinema-dislike-btn',
         commentsBtn: '.yt-cinema-comments-btn',
