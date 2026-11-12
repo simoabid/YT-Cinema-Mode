@@ -9,7 +9,7 @@
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chrome.google.com/webstore)
 [![Firefox Add-on](https://img.shields.io/badge/Firefox-Add--on-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white)](https://addons.mozilla.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 [![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg?style=for-the-badge)](https://github.com/simoabid/YT-Cinema-Mode)
 
 <p align="center">
@@ -67,34 +67,44 @@ Tailored 9:16 smartphone-like frame with auto-looping, camera notch bezel, and m
 ### 📸 **High-Res Screenshot Tool**
 Capture uncompressed video frames (`S`) with shutter-flash feedback. Use `Shift+S` or `Shift+Click` to copy frames directly to your clipboard!
 
+### 🔁 **A-B Segment Loop & Repeat**
+Cycle seamless A-B segment loop markers (`B`) with a real-time progress bar highlight, or toggle full-video repeat (`R` / `Shift+Click`).
+
+### 📑 **Interactive Chapters & Video Info**
+Inspect video metadata and jump straight to chapters (`O`) parsed from YouTube chapters or description timestamps inside a slide-over drawer.
+
+### 📋 **Watch Queue & Auto-Advance**
+Queue up videos while browsing (`Alt+Q` or thumbnail `+ Queue` badge), reorder/remove items in the Queue drawer (`U`), and auto-advance when videos finish.
+
 </td>
 <td width="50%" valign="top">
 
 ### ⏩ **Speed Controller & Presets**
 Speed pill with dropdown menu (`0.25x` to `3x`) and keyboard step controls (`[` / `]`). Optionally persist speed across videos.
 
-### 🕶️ **Backdrop Customizer**
-Switch between modern **Frosted Glass** (with 50%–100% opacity slider) and pure **OLED Blackout** mode — and reskin every surface of the extension with any of the four **Catppuccin** flavors (Latte, Frappé, Macchiato, Mocha).
+### 🕶️ **Expanded Theme Engine & Backdrops**
+Switch between **Frosted Glass** (with 50%–100% opacity slider) and **OLED Blackout**, and reskin every surface with four **Catppuccin** flavors plus **OLED Crimson** and **Nord Arctic**.
+
+### 🎨 **Visual Filters & Ultrawide Zoom**
+Apply cinema grading presets (`Vivid Cinema`, `Warm Eye-Care`, `Late Night Dim`, `Noir B&W` via `V`) and crop-zoom (`1x` / `1.15x` / `1.34x` via `Z`) for ultrawide displays.
+
+### 🧘 **Zen Focus Mode & Sleep Timer**
+Fade out header and footer chrome (`X`) for distraction-free viewing (or enable by default in settings), and set a countdown sleep timer (`Y` / `Shift+Click`: 15m / 30m / 60m).
 
 ### 🔊 **Glass Volume HUD**
 Smooth volume adjustment (`↑` / `↓`) and instant mute/unmute (`M`) with a real-time glass HUD overlay.
 
 ### ⏭️ **Playlist & Up Next Navigation**
-Skip to the next recommendation/playlist video (`N`) or previous video (`P`) without leaving the overlay.
+Skip to the next queued, playlist, or recommended video (`N`) or previous video (`P`) without leaving the overlay.
 
 ### 🕘 **Watch History & Resume Sync**
 Playback is reported to your signed-in YouTube account with the watch page's own tracking beacons, so videos land in history with progress. Cinema Mode also remembers your place locally.
 
-### 🖱️ **Mouse Triggers & Key Recorder**
-`Alt+Click` or middle-click any thumbnail, or bind any keyboard key using the interactive hotkey recorder.
-
-### 🖼️ **Picture-in-Picture & Auto-Pause**
-Built-in PiP mode, optional Direct PiP launching, and smart auto-pause/resume for existing tab videos.
+### 🖱️ **Mouse Triggers, Key Recorder & Tabbed Popup**
+`Alt+Click` or middle-click any thumbnail, bind any hotkey in the 4-tab keyboard-accessible popup (`General`, `Visuals`, `Playback`, `Shortcuts`), and launch straight into Mini-Player or native PiP.
 
 ### 👍 **Real Likes & Comments In The Overlay**
-See the video's actual like count, like or dislike it, and read the real comment threads without leaving cinema mode (`Shift+C`). The embedded player is untouched — comments slide in over the right edge of the video.
-
-The **Subscribe** pill next to them works like YouTube's own button: it subscribes or unsubscribes from the video's channel, shows the live subscriber count, and confirms the change with a toast.
+See the video's actual like count, like or dislike it, and read the real comment threads without leaving cinema mode (`Shift+C`). The **Subscribe** pill subscribes or unsubscribes live with toast confirmation.
 
 </td>
 </tr>
@@ -211,7 +221,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 
 | Setting | Description | Default |
 |:---|:---|:---:|
-| **🐱 Theme** | Catppuccin flavor for the overlay, menus and popup (Mocha, Macchiato, Frappé, Latte) | `Mocha` |
+| **🎨 Theme** | Color theme for the overlay, menus and popup (Catppuccin Mocha, Macchiato, Frappé, Latte, OLED Crimson, Nord Arctic) | `Mocha` |
 | **🔑 Cinema Hotkey** | Interactive recorder to assign any key | `Space` |
 | **🎨 Backdrop Style** | Choose between Frosted Glass and OLED Blackout | `Frosted Glass` |
 | **🌓 Backdrop Opacity** | Adjust background darkness (50% to 100%) | `90%` |
@@ -223,6 +233,8 @@ Click the extension icon 🧩 in your toolbar to customize features:
 | **🕶️ Auto-Hide Controls** | Fade out controls and cursor after a short idle delay | `ON` |
 | **⏱️ Remember Speed** | Persist chosen playback speed across all videos | `ON` |
 | **🎞️ Remember Quality** | Persist the chosen video quality for future videos | `ON` |
+| **📋 Auto-Play Watch Queue** | Automatically advance to the next queued video when playback ends | `ON` |
+| **🧘 Start in Zen Focus Mode** | Launch overlays with header and footer dimmed until hovered | `OFF` |
 | **📌 Direct Mini-Player** | Open straight into mini-player via `Ctrl + Hotkey` | `OFF` |
 | **🖼️ Direct PiP** | Open directly in native Picture-in-Picture window | `OFF` |
 | **🖱️ Alt + Click Trigger** | Instantly open thumbnail in cinema mode via Alt+Click | `ON` |
@@ -236,10 +248,19 @@ Click the extension icon 🧩 in your toolbar to customize features:
 
 | Shortcut | Action |
 |:---|:---|
-| <kbd>H</kbd> *(customizable)* | 🎬 Open cinema mode for hovered video |
-| <kbd>Ctrl</kbd> + <kbd>H</kbd> | 📌 Open directly into floating Mini-Player |
+| <kbd>Space</kbd> *(customizable)* | 🎬 Open cinema mode for hovered video |
+| <kbd>Alt</kbd> + <kbd>Q</kbd> | 📋 Add hovered video thumbnail to Watch Queue |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | 📌 Open directly into floating Mini-Player |
 | <kbd>Alt</kbd> + <kbd>H</kbd> | 🌐 Global command shortcut to toggle cinema mode |
 | <kbd>Alt</kbd> + Click | ⚡ Instant trigger on video thumbnail |
+| <kbd>B</kbd> | 🔁 Cycle A-B segment loop (`Point A` → `Point B` → `Off`) |
+| <kbd>R</kbd> | ♾️ Toggle full-video repeat |
+| <kbd>O</kbd> | 📑 Open / close Chapters & Video Info drawer |
+| <kbd>U</kbd> | 📋 Open / close Watch Queue drawer |
+| <kbd>V</kbd> | 🎨 Toggle Visual Filters & Aspect Zoom menu |
+| <kbd>Z</kbd> | 📐 Cycle Ultrawide Zoom (`1x` → `1.15x` → `1.34x`) |
+| <kbd>X</kbd> | 🧘 Toggle Zen Focus Mode |
+| <kbd>Y</kbd> | ⏲️ Cycle Sleep Timer (`15m` → `30m` → `60m` → `Off`) |
 | <kbd>D</kbd> | 📌 Toggle Mini-Player / Corner Dock mode (draggable & resizable) |
 | <kbd>S</kbd> | 📸 Capture native-res screenshot (Download PNG) |
 | <kbd>Shift</kbd> + <kbd>S</kbd> | 📋 Copy native-res screenshot directly to clipboard |
@@ -253,7 +274,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 | <kbd>←</kbd> / <kbd>→</kbd> | ⏪ / ⏩ Seek backward / forward (5s / 10s) |
 | <kbd>F</kbd> | ⛶ Toggle fullscreen |
 | <kbd>T</kbd> | 🎭 Toggle theater mode |
-| <kbd>ESC</kbd> | ❌ Close active overlay |
+| <kbd>ESC</kbd> | ❌ Close active menu, drawer, or overlay |
 
 ---
 
@@ -277,7 +298,7 @@ Click the extension icon 🧩 in your toolbar to customize features:
 ## 🔧 Technical Architecture
 
 - **Zero-Build Module System**: The content script is split into small, single-purpose files that the manifest loads **in order** via `content_scripts[].js`. Everything shares one isolated-world namespace (`YTC`), so there is no bundler, no transpiler and no extra dependencies — you can edit a file, hit reload in `chrome://extensions`, and see the change.
-- **Tokenized Catppuccin Theming**: every colour the extension paints resolves through semantic `--ytc-*` custom properties defined once in `content/styles/00-themes.css`. The flavor is just a `data-ytc-theme` attribute on the document root, so a new theme is one palette block — no component stylesheet changes.
+- **Expanded Tokenized Theme Engine**: Every colour the extension paints resolves through semantic `--ytc-*` custom properties defined once in `content/styles/00-themes.css`. The selected theme (`latte`, `frappe`, `macchiato`, `mocha`, `oled-crimson`, or `nord`) is a `data-ytc-theme` attribute on the document root, so adding a theme requires only one palette block.
 - **Cross-Browser Universal API Bridge**: Unified wrapper dynamically routing between `chrome.*` and `browser.*` APIs.
 - **Sandboxed Full YouTube Player**: Embeds the authentic YouTube player inside an isolated, script-enabled iframe for full native functionality while preventing unwanted navigation.
 - **Native Watch-History Reporting**: The embed surface is tracked by YouTube as an embedded player, so it does not update watch history on its own. The extension mints a normal WEB player response and sends the same `videostats` playback/watchtime beacons as the watch page (`el=detailpage`, one stable `cpn`, `st`/`et` windows), which records history and resume progress without giving up the lightweight embed or altering its headers. Authenticated requests carry the same `X-Goog-AuthUser` and `SAPISIDHASH` headers as YouTube itself, which requires the `cookies` permission; the cookie is only used locally to sign those requests and is never stored or sent anywhere else.
@@ -301,11 +322,13 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   ├── content.js                          Bootstrap: page-level triggers + hover badge
 │   ├── modules/
 │   │   ├── core.js                         Namespace, settings, shared state, storage
-│   │   ├── theme.js                        Catppuccin flavor selection (data-ytc-theme)
+│   │   ├── theme.js                        Theme selection (data-ytc-theme)
 │   │   ├── icons.js                        Every inline SVG used by the overlay
 │   │   ├── video.js                        URL / title / aspect-ratio helpers (pure)
 │   │   ├── innertube.js                    YouTube web API config, auth and fetch plumbing
 │   │   ├── engagement.js                   Like counts, ratings, subscriptions, comments
+│   │   ├── chapters.js                     Chapter markers, timestamps & metadata parser
+│   │   ├── queue.js                        Persistent Up Next Watch Queue store (storage.local)
 │   │   ├── layout.js                       Container sizing, resizing, scroll lock
 │   │   ├── player.js                       Everything that reaches into the embed iframe
 │   │   ├── overlay.js                      Overlay DOM construction, direct PiP
@@ -314,11 +337,13 @@ Click the extension icon 🧩 in your toolbar to customize features:
 │   │   └── controls/                       One feature per file
 │   │       ├── toast.js  autohide.js  speed.js  quality.js
 │   │       ├── transport.js  history.js  ambient.js  screenshot.js
-│   │       └── dock.js  navigation.js  engagement.js  keyboard.js
-│   └── styles/                             Stylesheet split into 9 ordered partials
-│       ├── 00-themes.css                   Catppuccin palette + semantic tokens
-│       ├── 01-overlay.css   02-ambient.css   03-docked.css   04-shorts.css
-│       └── 05-feedback.css  06-menus.css     07-page.css     08-engagement.css
+│   │       ├── dock.js  navigation.js  engagement.js  loop.js
+│   │       └── chapters.js  queue.js  filters.js  zen.js  keyboard.js
+│   └── styles/                             Stylesheet split into 11 ordered partials
+│       ├── 00-themes.css                   Palette tokens (Catppuccin, OLED Crimson, Nord)
+│       ├── 01-overlay.css   02-ambient.css   03-docked.css       04-shorts.css
+│       ├── 05-feedback.css  06-menus.css     07-page.css         08-engagement.css
+│       └── 09-loop-chapters.css              10-queue-filters.css
 ├── popup/                                  Settings UI
 ├── icons/                                  Extension icons (+ icon-source.png)
 ├── docs/                                   Historical audit notes
