@@ -11,11 +11,11 @@ const { loadExtension } = require('./harness');
 const ATTRIBUTE = 'data-ytc-theme';
 
 describe('theme selection', () => {
-    it('ships all four Catppuccin flavors with mocha as the default', () => {
+    it('ships all six themes (4 Catppuccin + oled-crimson + nord) with mocha as the default', () => {
         const env = loadExtension();
         const theme = env.YTC.theme;
 
-        const expected = ['latte', 'frappe', 'macchiato', 'mocha'];
+        const expected = ['latte', 'frappe', 'macchiato', 'mocha', 'oled-crimson', 'nord'];
         if (JSON.stringify(theme.THEMES) !== JSON.stringify(expected)) {
             throw new Error(`unexpected flavors: ${JSON.stringify(theme.THEMES)}`);
         }

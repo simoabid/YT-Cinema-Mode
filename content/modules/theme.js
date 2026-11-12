@@ -8,7 +8,7 @@
 (function (YTC) {
     'use strict';
 
-    const THEMES = ['latte', 'frappe', 'macchiato', 'mocha'];
+    const THEMES = ['latte', 'frappe', 'macchiato', 'mocha', 'oled-crimson', 'nord'];
     const DEFAULT_THEME = 'mocha';
     const ATTRIBUTE = 'data-ytc-theme';
 

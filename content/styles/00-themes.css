@@ -18,7 +18,9 @@
 [data-ytc-theme="latte"],
 [data-ytc-theme="frappe"],
 [data-ytc-theme="macchiato"],
-[data-ytc-theme="mocha"] {
+[data-ytc-theme="mocha"],
+[data-ytc-theme="oled-crimson"],
+[data-ytc-theme="nord"] {
     /* Surfaces */
     --ytc-bg: var(--ytc-base);
     --ytc-bg-deep: var(--ytc-crust);
@@ -232,4 +234,83 @@
     --ytc-mauve-rgb: 198 160 246;
     --ytc-red-rgb: 237 135 150;
     --ytc-green-rgb: 166 218 149;
+}
+
+[data-ytc-theme="oled-crimson"] {
+    --ytc-shadow-rgb: var(--ytc-crust-rgb);
+    --ytc-on-accent: #000000;
+
+    --ytc-rosewater: #ffd6e0;
+    --ytc-flamingo: #ff9eb5;
+    --ytc-pink: #ff668c;
+    --ytc-mauve: #d946ef;
+    --ytc-red: #ff3366;
+    --ytc-maroon: #e11d48;
+    --ytc-peach: #fb7185;
+    --ytc-yellow: #fbbf24;
+    --ytc-green: #34d399;
+    --ytc-teal: #2dd4bf;
+    --ytc-sky: #ff668c;
+    --ytc-sapphire: #ff3366;
+    --ytc-blue: #ff1a53;
+    --ytc-lavender: #f43f5e;
+    --ytc-text: #f5f5f7;
+    --ytc-subtext1: #d4d4de;
+    --ytc-subtext0: #b4b4c0;
+    --ytc-overlay2: #9898a6;
+    --ytc-overlay1: #828290;
+    --ytc-overlay0: #606070;
+    --ytc-surface2: #282834;
+    --ytc-surface1: #1c1c26;
+    --ytc-surface0: #12121a;
+    --ytc-base: #000000;
+    --ytc-mantle: #040407;
+    --ytc-crust: #08080c;
+
+    --ytc-text-rgb: 245 245 247;
+    --ytc-crust-rgb: 8 8 12;
+    --ytc-mantle-rgb: 4 4 7;
+    --ytc-sapphire-rgb: 255 51 102;
+    --ytc-mauve-rgb: 217 70 239;
+    --ytc-red-rgb: 255 51 102;
+    --ytc-green-rgb: 52 211 153;
+}
+
+[data-ytc-theme="nord"] {
+    --ytc-shadow-rgb: var(--ytc-crust-rgb);
+
+    --ytc-rosewater: #eceff4;
+    --ytc-flamingo: #d08770;
+    --ytc-pink: #b48ead;
+    --ytc-mauve: #b48ead;
+    --ytc-red: #bf616a;
+    --ytc-maroon: #d08770;
+    --ytc-peach: #d08770;
+    --ytc-yellow: #ebcb8b;
+    --ytc-green: #a3be8c;
+    --ytc-teal: #8fbcbb;
+    --ytc-sky: #8fbcbb;
+    --ytc-sapphire: #88c0d0;
+    --ytc-blue: #81a1c1;
+    --ytc-lavender: #5e81ac;
+    --ytc-text: #eceff4;
+    --ytc-subtext1: #e5e9f0;
+    --ytc-subtext0: #d8dee9;
+    --ytc-overlay2: #9099ab;
+    --ytc-overlay1: #7b88a1;
+    --ytc-overlay0: #616e88;
+    --ytc-surface2: #4c566a;
+    --ytc-surface1: #434c5e;
+    --ytc-surface0: #3b4252;
+    --ytc-base: #2e3440;
+    --ytc-mantle: #242933;
+    --ytc-crust: #1e222a;
+
+    --ytc-text-rgb: 236 239 244;
+    --ytc-crust-rgb: 30 34 42;
+    --ytc-mantle-rgb: 36 41 51;
+    --ytc-sapphire-rgb: 136 192 208;
+    --ytc-mauve-rgb: 180 142 173;
+    --ytc-red-rgb: 191 97 106;
+    --ytc-green-rgb: 163 190 140;
 }
