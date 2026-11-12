@@ -21,6 +21,8 @@ const MODULE_ORDER = [
     'content/modules/video.js',
     'content/modules/innertube.js',
     'content/modules/engagement.js',
+    'content/modules/chapters.js',
+    'content/modules/queue.js',
     'content/modules/layout.js',
     'content/modules/player.js',
     'content/modules/overlay.js',
@@ -36,6 +38,11 @@ const MODULE_ORDER = [
     'content/modules/controls/dock.js',
     'content/modules/controls/navigation.js',
     'content/modules/controls/engagement.js',
+    'content/modules/controls/loop.js',
+    'content/modules/controls/chapters.js',
+    'content/modules/controls/queue.js',
+    'content/modules/controls/filters.js',
+    'content/modules/controls/zen.js',
     'content/modules/controls/keyboard.js',
     'content/modules/controller.js'
 ];
@@ -256,6 +263,71 @@ function buildOverlayDom(document) {
     }
     playerWrapper.appendChild(commentsPanel);
 
+    const loopBtn = document.createElement('button');
+    loopBtn.className = 'yt-cinema-btn yt-cinema-loop-btn';
+    loopBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-loop-badge'
+    }));
+    container.appendChild(loopBtn);
+
+    const loopBar = document.createElement('div');
+    loopBar.className = 'yt-cinema-loop-bar';
+    const loopFill = document.createElement('div');
+    loopFill.className = 'yt-cinema-loop-fill';
+    loopBar.appendChild(loopFill);
+    playerWrapper.appendChild(loopBar);
+
+    const chaptersBtn = document.createElement('button');
+    chaptersBtn.className = 'yt-cinema-btn yt-cinema-chapters-btn';
+    chaptersBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-chapters-count'
+    }));
+    container.appendChild(chaptersBtn);
+
+    const chaptersPanel = document.createElement('div');
+    chaptersPanel.className = 'yt-cinema-chapters-panel';
+    const chaptersMeta = document.createElement('div');
+    chaptersMeta.className = 'yt-cinema-chapters-meta';
+    chaptersMeta.appendChild(Object.assign(document.createElement('div'), { className: 'yt-cinema-chapters-desc' }));
+    chaptersPanel.appendChild(chaptersMeta);
+    for (const cls of ['yt-cinema-chapters-total', 'yt-cinema-chapters-status',
+        'yt-cinema-chapters-list', 'yt-cinema-chapters-close']) {
+        chaptersPanel.appendChild(Object.assign(document.createElement('div'), { className: cls }));
+    }
+    playerWrapper.appendChild(chaptersPanel);
+
+    const queueBtn = document.createElement('button');
+    queueBtn.className = 'yt-cinema-btn yt-cinema-queue-btn';
+    queueBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-queue-count'
+    }));
+    container.appendChild(queueBtn);
+
+    const queuePanel = document.createElement('div');
+    queuePanel.className = 'yt-cinema-queue-panel';
+    for (const cls of ['yt-cinema-queue-clear', 'yt-cinema-queue-close',
+        'yt-cinema-queue-status', 'yt-cinema-queue-list']) {
+        queuePanel.appendChild(Object.assign(document.createElement('div'), { className: cls }));
+    }
+    playerWrapper.appendChild(queuePanel);
+
+    const filtersContainer = document.createElement('div');
+    filtersContainer.className = 'yt-cinema-filters-container';
+    const filtersBtn = document.createElement('button');
+    filtersBtn.className = 'yt-cinema-btn yt-cinema-filters-btn';
+    const filtersMenu = document.createElement('div');
+    filtersMenu.className = 'yt-cinema-filters-menu';
+    filtersContainer.appendChild(filtersBtn);
+    filtersContainer.appendChild(filtersMenu);
+    container.appendChild(filtersContainer);
+
+    const zenBtn = document.createElement('button');
+    zenBtn.className = 'yt-cinema-btn yt-cinema-zen-btn';
+    zenBtn.appendChild(Object.assign(document.createElement('span'), {
+        className: 'yt-cinema-sleep-badge'
+    }));
+    container.appendChild(zenBtn);
+
     for (const cls of ['yt-cinema-drag-shield', 'yt-cinema-shutter-flash']) {
         container.appendChild(document.createElement('div', cls));
     }
@@ -290,7 +362,9 @@ function buildOverlayDom(document) {
     iframe.contentWindow = { postMessage() {} };
 
     return { overlay, container, iframe, speedPill, speedMenu, qualityPill, qualityMenu, titleSpan,
-        subscribeBtn, likeBtn, dislikeBtn, commentsBtn, commentsPanel };
+        subscribeBtn, likeBtn, dislikeBtn, commentsBtn, commentsPanel,
+        loopBtn, loopBar, loopFill, chaptersBtn, chaptersPanel, queueBtn, queuePanel,
+        filtersBtn, filtersMenu, zenBtn };
 }
 
 /** A minimal fake YouTube <video> + movie_player pair. */
@@ -304,6 +378,8 @@ function createEmbedDocument(document) {
     media.muted = false;
     media.paused = false;
     media.ended = false;
+    media.loop = false;
+    media.duration = 600;
     media.readyState = 4;
     media.playbackRate = 1;
     media.currentTime = 0;
@@ -327,6 +403,8 @@ function createEmbedDocument(document) {
     player.unMute = () => { media.muted = false; };
     player.isMuted = () => media.muted;
     player.setPlaybackRate = () => {};
+    player.seekTo = (seconds) => { media.currentTime = seconds; };
+    player.pauseVideo = () => { media.paused = true; };
 
     embedDoc.body.appendChild(player);
     embedDoc.body.appendChild(media);
@@ -347,7 +425,14 @@ function createContext(env, options = {}) {
 
     dom.iframe.contentDocument = embed.embedDoc;
 
-    const flags = { speedMenuOpen: false, qualityMenuOpen: false, commentsOpen: false };
+    const flags = {
+        speedMenuOpen: false,
+        qualityMenuOpen: false,
+        filtersMenuOpen: false,
+        commentsOpen: false,
+        chaptersOpen: false,
+        queueOpen: false
+    };
 
     const ctx = {
         overlayElement: dom.overlay,
@@ -382,6 +467,25 @@ function createContext(env, options = {}) {
             commentsMore: dom.commentsPanel.querySelector('.yt-cinema-comments-more'),
             commentsClose: dom.commentsPanel.querySelector('.yt-cinema-comments-close'),
             commentsStatus: dom.commentsPanel.querySelector('.yt-cinema-comments-status'),
+            loopBtn: dom.loopBtn,
+            loopBar: dom.loopBar,
+            loopFill: dom.loopFill,
+            chaptersBtn: dom.chaptersBtn,
+            chaptersPanel: dom.chaptersPanel,
+            chaptersList: dom.chaptersPanel.querySelector('.yt-cinema-chapters-list'),
+            chaptersTotal: dom.chaptersPanel.querySelector('.yt-cinema-chapters-total'),
+            chaptersMeta: dom.chaptersPanel.querySelector('.yt-cinema-chapters-meta'),
+            chaptersClose: dom.chaptersPanel.querySelector('.yt-cinema-chapters-close'),
+            chaptersStatus: dom.chaptersPanel.querySelector('.yt-cinema-chapters-status'),
+            queueBtn: dom.queueBtn,
+            queuePanel: dom.queuePanel,
+            queueList: dom.queuePanel.querySelector('.yt-cinema-queue-list'),
+            queueClear: dom.queuePanel.querySelector('.yt-cinema-queue-clear'),
+            queueClose: dom.queuePanel.querySelector('.yt-cinema-queue-close'),
+            queueStatus: dom.queuePanel.querySelector('.yt-cinema-queue-status'),
+            filtersBtn: dom.filtersBtn,
+            filtersMenu: dom.filtersMenu,
+            zenBtn: dom.zenBtn,
             speedPill: dom.speedPill,
             speedMenu: dom.speedMenu,
             qualityPill: dom.qualityPill,
@@ -444,6 +548,22 @@ function createContext(env, options = {}) {
 
     ctx.dock = { toggles: 0, toggle() { this.toggles++; }, bringToFront() {}, initDockedState() {}, cancelPendingFrames() {}, endResize() {}, bind() {} };
     ctx.screenshot = { takes: 0, takeScreenshot() { this.takes++; }, bind() {} };
+    ctx.transport = {
+        seeks: [],
+        pauses: 0,
+        seekToSeconds(seconds) { this.seeks.push(seconds); embed.media.currentTime = seconds; },
+        pause() { this.pauses++; embed.media.pause(); },
+        changeVolume() {},
+        toggleMute() {},
+        togglePlayPause() {},
+        seekBySeconds(seconds) { embed.media.currentTime = Math.max(0, embed.media.currentTime + seconds); },
+        clearTimers() {}
+    };
+    ctx.loop = { resets: 0, resetForNewVideo() { this.resets++; }, checkLoop() {}, getState: () => ({ repeatAll: false }) };
+    ctx.chapters = { resets: 0, resetForNewVideo() { this.resets++; }, syncActiveChapter() {}, togglePanel() {}, isOpen: () => false };
+    ctx.queue = { togglePanel() {}, isOpen: () => false };
+    ctx.filters = { closeMenu() { flags.filtersMenuOpen = false; }, toggleMenu() {}, cycleZoom() {} };
+    ctx.zen = { toggleZen() {}, cycleSleepTimer() {} };
     ctx.history = {
         changed: 0,
         stops: 0,

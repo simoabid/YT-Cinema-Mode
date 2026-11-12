@@ -334,12 +334,22 @@ class Element extends EventTarget_ {
     setAttribute(name, value) {
         this.attributes.set(name, String(value));
         if (name === 'class') this.classList.value = value;
+        else if (name.startsWith('data-')) {
+            const key = name.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+            this.dataset[key] = String(value);
+        }
     }
     getAttribute(name) {
         if (name === 'class') return this.classList.value || null;
         return this.attributes.has(name) ? this.attributes.get(name) : null;
     }
-    removeAttribute(name) { this.attributes.delete(name); }
+    removeAttribute(name) {
+        this.attributes.delete(name);
+        if (name.startsWith('data-')) {
+            const key = name.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+            delete this.dataset[key];
+        }
+    }
     hasAttribute(name) { return this.attributes.has(name); }
 
     /** Reflects to the attribute, the way the real DOM does. */

@@ -120,9 +120,9 @@ for (const m of allText.matchAll(/\bYTC(?:\.controls)?\.([A-Za-z_$][\w$]*)\s*=/g
 // Members created dynamically as properties of an existing namespace.
 for (const m of allText.matchAll(/\bYTC\.controls\.([A-Za-z_$][\w$]*)\s*=\s*\{/g)) defined.add(m[1]);
 for (const name of ['api', 'KEYS', 'defaults', 'settings', 'state', 'util', 'storage', 'icons', 'video',
-    'layout', 'player', 'overlay', 'launcher', 'controls', 'controller', 'hover', 'saveSpeed', 'saveQuality',
-    'applyAmbientSettings', 'applyBackdropSettings', 'lockScroll', 'unlockScroll', 'pauseBackgroundVideo',
-    'resumeBackgroundVideo', 'applySettings', 'initSettings']) {
+    'layout', 'player', 'overlay', 'launcher', 'controls', 'controller', 'hover', 'chapters', 'queue',
+    'saveSpeed', 'saveQuality', 'applyAmbientSettings', 'applyBackdropSettings', 'lockScroll', 'unlockScroll',
+    'pauseBackgroundVideo', 'resumeBackgroundVideo', 'applySettings', 'initSettings']) {
     defined.add(name);
 }
 
