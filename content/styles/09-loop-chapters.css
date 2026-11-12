@@ -1,0 +1,387 @@
+/* Loop controls (A-B segment + repeat), Chapters & Info drawer, and Zen Focus Mode + Sleep Timer. */
+
+/* ----------------------------------------------------------- Loop button & bar */
+
+.yt-cinema-loop-btn {
+    position: relative;
+    width: auto;
+    min-width: 36px;
+    padding: 0 8px;
+    gap: 4px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+}
+
+.yt-cinema-loop-badge {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-loop-badge:empty {
+    display: none;
+}
+
+.yt-cinema-loop-btn.yt-cinema-loop-active,
+.yt-cinema-loop-btn.yt-cinema-repeat-active {
+    background: var(--ytc-accent-soft);
+    border: 1px solid var(--ytc-accent-border);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-loop-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    background: rgb(var(--ytc-crust-rgb) / 70%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 16;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.yt-cinema-loop-bar.yt-cinema-loop-bar-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.yt-cinema-loop-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    background: linear-gradient(90deg, var(--ytc-accent) 0%, var(--ytc-brand) 100%);
+    box-shadow: 0 0 8px var(--ytc-accent-glow);
+    border-radius: 2px;
+    transition: left 0.15s ease, width 0.15s ease;
+}
+
+/* ----------------------------------------------------------- Chapters button */
+
+.yt-cinema-chapters-btn {
+    width: auto;
+    min-width: 36px;
+    padding: 0 9px;
+    gap: 5px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+}
+
+.yt-cinema-chapters-btn.active {
+    background: var(--ytc-accent-soft);
+    border: 1px solid var(--ytc-accent-border);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-chapters-count {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.yt-cinema-chapters-count:empty {
+    display: none;
+}
+
+/* ----------------------------------------------------------- Chapters drawer */
+
+.yt-cinema-chapters-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 100%);
+    display: flex;
+    flex-direction: column;
+    background: rgb(var(--ytc-crust-rgb) / 96%);
+    border-left: 1px solid var(--ytc-border);
+    box-shadow: -18px 0 40px var(--ytc-shadow-deep);
+    transform: translateX(102%);
+    visibility: hidden;
+    opacity: 0;
+    z-index: 23;
+    color: var(--ytc-text-primary);
+    font-family: 'Roboto', Arial, sans-serif;
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1),
+                opacity 0.2s ease,
+                visibility 0.25s;
+}
+
+.yt-cinema-chapters-panel.yt-cinema-chapters-open {
+    transform: translateX(0);
+    visibility: visible;
+    opacity: 1;
+}
+
+.yt-cinema-chapters-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ytc-border);
+    flex-shrink: 0;
+}
+
+.yt-cinema-chapters-heading {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-chapters-total {
+    font-size: 12px;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-chapters-total:empty {
+    display: none;
+}
+
+.yt-cinema-chapters-close {
+    margin-left: auto;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ytc-fill);
+    border: none;
+    border-radius: 6px;
+    color: var(--ytc-text-secondary);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-chapters-close:hover {
+    background: var(--ytc-danger-hover);
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-chapters-close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.yt-cinema-chapters-meta {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ytc-fill-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.yt-cinema-chapters-meta:empty {
+    display: none;
+}
+
+.yt-cinema-chapters-meta-line {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ytc-text-tertiary);
+    line-height: 1.4;
+}
+
+.yt-cinema-chapters-desc {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ytc-text-secondary);
+    white-space: pre-wrap;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    cursor: pointer;
+}
+
+.yt-cinema-chapters-desc.yt-cinema-chapters-desc-expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.yt-cinema-chapters-desc:empty {
+    display: none;
+}
+
+.yt-cinema-chapters-status {
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ytc-text-tertiary);
+}
+
+.yt-cinema-chapters-status:empty {
+    display: none;
+}
+
+.yt-cinema-chapters-status.yt-cinema-chapters-status-error {
+    color: var(--ytc-danger);
+}
+
+.yt-cinema-chapters-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ytc-fill-hover) transparent;
+}
+
+.yt-cinema-chapters-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.yt-cinema-chapters-list::-webkit-scrollbar-thumb {
+    background: var(--ytc-fill-hover);
+    border-radius: 4px;
+}
+
+.yt-cinema-chapter-item {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--ytc-text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.yt-cinema-chapter-item:hover {
+    background: var(--ytc-fill);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-chapter-item.yt-cinema-chapter-active {
+    background: var(--ytc-accent-soft);
+    border-color: var(--ytc-accent-border);
+    color: var(--ytc-text-primary);
+}
+
+.yt-cinema-chapter-time {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--ytc-fill);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-chapter-title {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* ---------------------------------------------------------- Zen Mode & Sleep */
+
+.yt-cinema-zen-btn {
+    position: relative;
+    width: auto;
+    min-width: 36px;
+    padding: 0 8px;
+    gap: 4px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+}
+
+.yt-cinema-zen-btn.active,
+.yt-cinema-zen-btn.yt-cinema-sleep-active {
+    background: var(--ytc-accent-soft);
+    border: 1px solid var(--ytc-accent-border);
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-sleep-badge {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ytc-accent);
+}
+
+.yt-cinema-sleep-badge:empty {
+    display: none;
+}
+
+.yt-cinema-container.yt-cinema-zen-mode {
+    box-shadow: 0 24px 60px var(--ytc-shadow-deep);
+}
+
+.yt-cinema-container.yt-cinema-zen-mode .yt-cinema-header,
+.yt-cinema-container.yt-cinema-zen-mode .yt-cinema-footer {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.yt-cinema-container.yt-cinema-zen-mode .yt-cinema-header:hover,
+.yt-cinema-container.yt-cinema-zen-mode .yt-cinema-footer:hover,
+.yt-cinema-container.yt-cinema-zen-mode .yt-cinema-header:focus-within {
+    opacity: 1;
+}
+
+/* ----------------------------------------------------------- Footer wrap */
+
+.yt-cinema-hint {
+    flex-wrap: wrap;
+    row-gap: 6px;
+    column-gap: 12px;
+}
+
+/* ------------------------------------------------------- Docked / Responsive */
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-loop-btn,
+.yt-cinema-container.yt-cinema-docked .yt-cinema-chapters-btn,
+.yt-cinema-container.yt-cinema-docked .yt-cinema-zen-btn {
+    height: 28px;
+    min-width: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-chapters-count,
+.yt-cinema-container.yt-cinema-shorts .yt-cinema-chapters-count {
+    display: none;
+}
+
+.yt-cinema-container.yt-cinema-docked .yt-cinema-chapters-panel {
+    width: 100%;
+    border-left: none;
+}
+
+@media (max-width: 768px) {
+    .yt-cinema-chapters-count {
+        display: none;
+    }
+
+    .yt-cinema-chapters-panel {
+        width: 100%;
+        border-left: none;
+    }
+}
