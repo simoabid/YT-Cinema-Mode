@@ -58,13 +58,35 @@
             `translate3d(${Math.round(validRect.left + 8)}px, ${Math.round(validRect.top + 8)}px, 0)`;
     }
 
+    function queueLink(link) {
+        if (!link?.href) return false;
+        const videoId = YTC.video.getVideoID(link.href);
+        if (!videoId) return false;
+        const title = YTC.video.getVideoTitle(link) || 'YouTube Video';
+        const isShort = YTC.video.isShortVideo(link.href);
+        const added = YTC.queue.add({ videoId, title, isShort });
+        const message = added ? `Added to Cinema Queue: ${title}` : `Already in Queue: ${title}`;
+        if (state.activeModalOverlay && typeof state.activeModalOverlay._showToast === 'function') {
+            state.activeModalOverlay._showToast(message, YTC.icons.queue);
+        } else {
+            YTC.overlay.showPageToast?.(message, YTC.icons.queue);
+        }
+        return added;
+    }
+
     function showIndicator(element) {
         if (!settings.showIndicator) return;
 
         if (!hoverIndicator) {
             hoverIndicator = document.createElement('div');
             hoverIndicator.className = 'yt-cinema-hover-indicator';
-            hoverIndicator.innerHTML = `${YTC.icons.clapper}<span></span>`;
+            hoverIndicator.innerHTML = `${YTC.icons.clapper}<span></span><button type="button" class="yt-cinema-hover-queue-btn" title="Add to Cinema Queue (Alt+Q)">+ Queue</button>`;
+            hoverIndicator.querySelector('.yt-cinema-hover-queue-btn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                queueLink(state.currentTarget);
+            });
             hoverIndicator.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -164,6 +186,16 @@
     function onHotkeyDown(e) {
         if (e.repeat) return;
         if (YTC.controls.keyboard.isTypingTarget()) return;
+
+        if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.key.toLowerCase() === 'q') {
+            if (state.currentTarget?.href && YTC.video.getVideoID(state.currentTarget.href)) {
+                e.preventDefault();
+                e.stopPropagation();
+                queueLink(state.currentTarget);
+            }
+            return;
+        }
+
         if (!util.isHotkeyMatch(e, settings.hotkey)) return;
 
         const isCtrl = e.ctrlKey || e.metaKey;

@@ -18,7 +18,8 @@ globalThis.YTC = globalThis.YTC || {};
         dockedShortsSize: 'ytCinemaDockedShortsSize',
         speed: 'ytCinemaSavedSpeed',
         quality: 'ytCinemaSavedQuality',
-        progress: 'ytCinemaProgress'
+        progress: 'ytCinemaProgress',
+        queue: 'ytCinemaQueue'
     };
 
     const MAX_PROGRESS_ENTRIES = 100;
@@ -46,7 +47,9 @@ globalThis.YTC = globalThis.YTC || {};
         altClickTrigger: true,
         middleClickTrigger: false,
         autoTheater: true,
-        showIndicator: true
+        showIndicator: true,
+        defaultZenMode: false,
+        autoAdvanceQueue: true
     };
 
     /**
@@ -65,7 +68,8 @@ globalThis.YTC = globalThis.YTC || {};
         savedDockedSize: null,
         savedDockedShortsSize: null,
         /** Last known playback position per video id, mirrored to storage.local. */
-        progress: {}
+        progress: {},
+        queue: []
     };
 
     let wasBackgroundPlaying = false;
@@ -398,6 +402,8 @@ globalThis.YTC = globalThis.YTC || {};
                     typeof changes[KEYS.progress].newValue === 'object') {
                     state.progress = changes[KEYS.progress].newValue;
                     lastProgressSnapshot = JSON.stringify(state.progress);
+                } else if (area === 'local' && changes[KEYS.queue]) {
+                    YTC.queue?.loadStoredQueue?.();
                 }
             });
         } catch (_) {}
@@ -463,6 +469,7 @@ globalThis.YTC = globalThis.YTC || {};
     YTC.initSettings = function () {
         loadStoredDockGeometry();
         loadStoredProgress();
+        YTC.queue?.loadStoredQueue?.();
         loadStoredSettings();
     };
 })(globalThis.YTC);

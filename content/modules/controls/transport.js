@@ -163,6 +163,33 @@
             } catch (_) {}
         }
 
+        function seekToSeconds(seconds) {
+            try {
+                const target = Math.max(0, Number(seconds) || 0);
+                const { video } = ctx.getPlayerElements();
+                const playerObj = getEmbedPlayer();
+                if (playerObj && typeof playerObj.seekTo === 'function') {
+                    playerObj.seekTo(target, true);
+                }
+                if (video && typeof video.currentTime === 'number') {
+                    video.currentTime = target;
+                }
+                ctx.autohide.reset();
+            } catch (_) {}
+        }
+
+        function pause() {
+            try {
+                const { video } = ctx.getPlayerElements();
+                const playerObj = getEmbedPlayer();
+                if (video && typeof video.pause === 'function') {
+                    video.pause();
+                } else if (playerObj && typeof playerObj.pauseVideo === 'function') {
+                    playerObj.pauseVideo();
+                }
+            } catch (_) {}
+        }
+
         /** Hide the HUD immediately as well as cancelling its timer. */
         function clearTimers() {
             if (hudTimer) {
@@ -177,6 +204,8 @@
             toggleMute,
             togglePlayPause,
             seekBySeconds,
+            seekToSeconds,
+            pause,
             clearTimers
         };
     }

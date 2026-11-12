@@ -131,9 +131,12 @@
                     <button class="yt-cinema-rating-btn yt-cinema-dislike-btn" title="Dislike this video" aria-pressed="false">${icons.thumbsDown}</button>
                     <button class="yt-cinema-btn yt-cinema-comments-btn" title="Comments (Shift+C)">${icons.comment}<span class="yt-cinema-comments-count"></span></button>
                 </div>
+                <button type="button" class="yt-cinema-btn yt-cinema-chapters-btn" title="Chapters & Info (O)">${icons.chapters}<span class="yt-cinema-chapters-count"></span></button>
+                <button type="button" class="yt-cinema-btn yt-cinema-queue-btn" title="Watch Queue (U)">${icons.queue}<span class="yt-cinema-queue-count"></span></button>
                 <button class="yt-cinema-btn yt-cinema-prev-btn" title="Previous Video (P)">${icons.previous}</button>
                 <button class="yt-cinema-btn yt-cinema-next-btn" title="Next Video (N)">${icons.next}</button>
                 <button class="yt-cinema-btn yt-cinema-dock-btn" title="Mini-Player / Corner Dock (D)">${icons.dock}</button>
+                <button type="button" class="yt-cinema-btn yt-cinema-loop-btn" title="A-B Loop (B) • Shift+Click or R to Repeat" aria-pressed="false">${icons.loop}<span class="yt-cinema-loop-badge"></span></button>
                 <div class="yt-cinema-speed-container">
                     <button class="yt-cinema-speed-pill" title="Playback Speed ([ / ])">1x</button>
                     <div class="yt-cinema-speed-menu"></div>
@@ -142,6 +145,11 @@
                     <button class="yt-cinema-quality-pill" title="Video Quality (Q)">Auto</button>
                     <div class="yt-cinema-quality-menu"></div>
                 </div>
+                <div class="yt-cinema-filters-container">
+                    <button type="button" class="yt-cinema-btn yt-cinema-filters-btn" title="Cinema Filters (V) • Ultrawide Zoom (Z)">${icons.filters}</button>
+                    <div class="yt-cinema-filters-menu"></div>
+                </div>
+                <button type="button" class="yt-cinema-btn yt-cinema-zen-btn" title="Zen Focus Mode (X) • Sleep Timer (Y)" aria-pressed="false">${icons.zen}<span class="yt-cinema-sleep-badge"></span></button>
                 <button class="yt-cinema-btn yt-cinema-screenshot-btn" title="Take Screenshot (S) • Shift+Click to Copy">${icons.screenshot}</button>
                 <button class="yt-cinema-btn yt-cinema-copy-btn" title="Copy Link at Current Time">${icons.copyLink}</button>
                 <button class="yt-cinema-btn yt-cinema-pip-btn" title="Picture-in-Picture">${icons.pip}</button>
@@ -156,14 +164,20 @@
             <div class="yt-cinema-hint">
                 <span class="yt-cinema-key">ESC</span> Close
                 <span class="yt-cinema-key">D</span> Dock
+                <span class="yt-cinema-key">B</span> Loop
+                <span class="yt-cinema-key">O</span> Chapters
+                <span class="yt-cinema-key">U</span> Queue
+                <span class="yt-cinema-key">V</span> Filters
+                <span class="yt-cinema-key">Z</span> Zoom
+                <span class="yt-cinema-key">X</span> Zen
+                <span class="yt-cinema-key">Y</span> Sleep
                 <span class="yt-cinema-key">Q</span> Quality
                 <span class="yt-cinema-key">[</span><span class="yt-cinema-key">]</span> Speed
-                <span class="yt-cinema-key">S</span> Screenshot
+                <span class="yt-cinema-key">S</span> Shot
                 <span class="yt-cinema-key">↑</span><span class="yt-cinema-key">↓</span> Vol
                 <span class="yt-cinema-key">M</span> Mute
-                <span class="yt-cinema-key">P</span> Prev
-                <span class="yt-cinema-key">N</span> Next
-                <span class="yt-cinema-key">F</span> Fullscreen
+                <span class="yt-cinema-key">P</span><span class="yt-cinema-key">N</span> Nav
+                <span class="yt-cinema-key">F</span> Full
             </div>
             <div class="yt-cinema-branding">Cinema Mode</div>
         `;
@@ -229,11 +243,47 @@
             <button class="yt-cinema-comments-more" title="Load more comments">Show more comments</button>
         `;
 
+        const loopBar = document.createElement('div');
+        loopBar.className = 'yt-cinema-loop-bar';
+        loopBar.innerHTML = '<div class="yt-cinema-loop-fill"></div>';
+
+        const chaptersPanel = document.createElement('div');
+        chaptersPanel.className = 'yt-cinema-chapters-panel';
+        chaptersPanel.setAttribute('aria-hidden', 'true');
+        chaptersPanel.innerHTML = `
+            <div class="yt-cinema-chapters-head">
+                <span class="yt-cinema-chapters-heading">Chapters &amp; Info</span>
+                <span class="yt-cinema-chapters-total"></span>
+                <button type="button" class="yt-cinema-chapters-close" title="Close chapters (O or Esc)">${icons.close}</button>
+            </div>
+            <div class="yt-cinema-chapters-meta">
+                <div class="yt-cinema-chapters-desc"></div>
+            </div>
+            <div class="yt-cinema-chapters-status"></div>
+            <div class="yt-cinema-chapters-list"></div>
+        `;
+
+        const queuePanel = document.createElement('div');
+        queuePanel.className = 'yt-cinema-queue-panel';
+        queuePanel.setAttribute('aria-hidden', 'true');
+        queuePanel.innerHTML = `
+            <div class="yt-cinema-queue-head">
+                <span class="yt-cinema-queue-heading">Watch Queue</span>
+                <button type="button" class="yt-cinema-queue-clear" title="Clear watch queue">Clear</button>
+                <button type="button" class="yt-cinema-queue-close" title="Close queue (U or Esc)">${icons.close}</button>
+            </div>
+            <div class="yt-cinema-queue-status"></div>
+            <div class="yt-cinema-queue-list"></div>
+        `;
+
         playerWrapper.appendChild(iframe);
         playerWrapper.appendChild(dragShield);
         playerWrapper.appendChild(shutterFlash);
+        playerWrapper.appendChild(loopBar);
         playerWrapper.appendChild(volumeHud);
         playerWrapper.appendChild(commentsPanel);
+        playerWrapper.appendChild(chaptersPanel);
+        playerWrapper.appendChild(queuePanel);
         playerWrapper.appendChild(toast);
 
         const footer = document.createElement('div');
@@ -358,5 +408,5 @@
         });
     }
 
-    YTC.overlay = { openDirectPictureInPicture, createOverlay };
+    YTC.overlay = { openDirectPictureInPicture, createOverlay, showPageToast };
 })(globalThis.YTC);

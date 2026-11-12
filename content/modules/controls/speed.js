@@ -102,6 +102,7 @@
 
             // Mirrors quality.toggleMenu: only one menu is ever open.
             if (flags.qualityMenuOpen) ctx.quality.closeMenu();
+            if (flags.filtersMenuOpen) ctx.filters?.closeMenu?.();
 
             els.speedMenu?.classList.add('yt-cinema-speed-menu-open');
             els.speedPill?.classList.add('active');

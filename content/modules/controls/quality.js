@@ -390,6 +390,7 @@
             }
 
             if (flags.speedMenuOpen) ctx.speed.closeMenu();
+            if (flags.filtersMenuOpen) ctx.filters?.closeMenu?.();
             els.qualityMenu?.classList.add('yt-cinema-quality-menu-open');
             els.qualityPill?.classList.add('active');
             focusedQualityIndex = availableQualities.findIndex(q => q.quality === currentQuality);

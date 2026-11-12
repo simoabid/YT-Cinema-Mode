@@ -72,7 +72,8 @@
         /** Hiding is suppressed while a menu is open or the user is on the chrome. */
         function isBlockingHide() {
             return !settings.autoHideControls || ctx.isDocked || isHoveringControls ||
-                flags.speedMenuOpen || flags.qualityMenuOpen || flags.commentsOpen;
+                flags.speedMenuOpen || flags.qualityMenuOpen || flags.filtersMenuOpen ||
+                flags.commentsOpen || flags.chaptersOpen || flags.queueOpen;
         }
 
         /** Persistent state: the video hide timer is never armed in this mode. */
@@ -82,7 +83,7 @@
 
         /** Transient state: the user is mid-interaction, so keep watching. */
         function isVideoHideBlocked() {
-            return isPlayerInteracting() || flags.speedMenuOpen || flags.qualityMenuOpen;
+            return isPlayerInteracting() || flags.speedMenuOpen || flags.qualityMenuOpen || flags.filtersMenuOpen;
         }
 
         // ------------------------------------------------- cinema chrome

@@ -236,7 +236,9 @@ const DEFAULT_SETTINGS = {
     rememberQuality: true,
     savedQuality: 'auto',
     directMiniPlayer: false,
-    directPiP: false
+    directPiP: false,
+    defaultZenMode: false,
+    autoAdvanceQueue: true
 };
 
 async function seedSettingsOnInstall() {

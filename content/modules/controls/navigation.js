@@ -57,6 +57,8 @@
 
             if (newTitle) updateHeaderTitle(newTitle, Boolean(isShortVideo));
             ctx.engagement?.resetForNewVideo(newId);
+            ctx.loop?.resetForNewVideo?.();
+            ctx.chapters?.resetForNewVideo?.(newId);
         }
 
         function updateHeaderTitle(newTitle, isShortVideo) {
@@ -104,6 +106,8 @@
             ctx.history.stop();
             ctx.quality.resetForNewVideo();
             ctx.engagement?.resetForNewVideo(newId);
+            ctx.loop?.resetForNewVideo?.();
+            ctx.chapters?.resetForNewVideo?.(newId);
             const resume = YTC.progress.resumeTimestamp(newId);
             iframe.src = video.buildPlayerUrl(newId, isShortVideo, resume, true);
         }
@@ -127,6 +131,13 @@
 
         /** Click the player's own next button, else fall back to a recommendation. */
         function playNext() {
+            const queued = YTC.queue?.shift?.();
+            if (queued && queued.videoId) {
+                loadVideo(queued.videoId, queued.title, queued.isShort);
+                ctx.toast?.show(`Playing from Queue: ${queued.title || 'Video'}`, icons.queue);
+                return;
+            }
+
             if (!triggerPlayerNavigation('nextVideo', '.ytp-next-button')) {
                 const recommendation = video.findNextRecommendation(ctx.currentVideoId);
                 if (recommendation) {
@@ -159,7 +170,7 @@
             els.nextBtn?.addEventListener('click', playNext);
         }
 
-        return { recordNavigation, playPrevious, playNext, bind };
+        return { recordNavigation, loadVideo, playPrevious, playNext, bind };
     }
 
     YTC.controls = YTC.controls || {};

@@ -36,6 +36,25 @@
         commentsMore: '.yt-cinema-comments-more',
         commentsClose: '.yt-cinema-comments-close',
         commentsStatus: '.yt-cinema-comments-status',
+        loopBtn: '.yt-cinema-loop-btn',
+        loopBar: '.yt-cinema-loop-bar',
+        loopFill: '.yt-cinema-loop-fill',
+        chaptersBtn: '.yt-cinema-chapters-btn',
+        chaptersPanel: '.yt-cinema-chapters-panel',
+        chaptersList: '.yt-cinema-chapters-list',
+        chaptersTotal: '.yt-cinema-chapters-total',
+        chaptersMeta: '.yt-cinema-chapters-meta',
+        chaptersClose: '.yt-cinema-chapters-close',
+        chaptersStatus: '.yt-cinema-chapters-status',
+        queueBtn: '.yt-cinema-queue-btn',
+        queuePanel: '.yt-cinema-queue-panel',
+        queueList: '.yt-cinema-queue-list',
+        queueClear: '.yt-cinema-queue-clear',
+        queueClose: '.yt-cinema-queue-close',
+        queueStatus: '.yt-cinema-queue-status',
+        filtersBtn: '.yt-cinema-filters-btn',
+        filtersMenu: '.yt-cinema-filters-menu',
+        zenBtn: '.yt-cinema-zen-btn',
         speedPill: '.yt-cinema-speed-pill',
         speedMenu: '.yt-cinema-speed-menu',
         qualityPill: '.yt-cinema-quality-pill',
@@ -70,7 +89,14 @@
             isDocked: Boolean(options.startDocked),
             isShort: Boolean(options.isShort),
             currentVideoId: options.videoId,
-            flags: { speedMenuOpen: false, qualityMenuOpen: false, commentsOpen: false },
+            flags: {
+                speedMenuOpen: false,
+                qualityMenuOpen: false,
+                filtersMenuOpen: false,
+                commentsOpen: false,
+                chaptersOpen: false,
+                queueOpen: false
+            },
 
             /** Cached <video>/player pair for the embed, re-resolved when stale. */
             getPlayerElements() {
@@ -106,6 +132,11 @@
         ctx.dock = controls.dock.createDockControl(ctx);
         ctx.navigation = controls.navigation.createNavigationControl(ctx);
         ctx.engagement = controls.engagement.createEngagementControl(ctx);
+        ctx.loop = controls.loop.createLoopControl(ctx);
+        ctx.chapters = controls.chapters.createChaptersControl(ctx);
+        ctx.queue = controls.queue.createQueueControl(ctx);
+        ctx.filters = controls.filters.createFiltersControl(ctx);
+        ctx.zen = controls.zen.createZenControl(ctx);
         ctx.keyboard = controls.keyboard.createKeyboardControl(ctx);
 
         exposeOverlayHooks(overlayElement, ctx);
@@ -179,9 +210,19 @@
                 onStopped();
                 ctx.history.onPaused();
             });
+            video.addEventListener('timeupdate', () => {
+                ctx.loop?.checkLoop?.(video);
+                ctx.chapters?.syncActiveChapter?.(video.currentTime);
+            });
             video.addEventListener('ended', () => {
                 onStopped();
                 ctx.history.onEnded();
+                if (!ctx.isShort &&
+                    !ctx.loop?.getState?.().repeatAll &&
+                    YTC.settings.autoAdvanceQueue !== false &&
+                    YTC.queue?.count?.() > 0) {
+                    ctx.navigation.playNext();
+                }
             });
             video.addEventListener('seeking', () => ctx.history.onSeeking());
 
@@ -221,6 +262,11 @@
         ctx.autohide.bindHoverTracking();
         ctx.keyboard.bind();
         ctx.engagement.bind();
+        ctx.loop.bind();
+        ctx.chapters.bind();
+        ctx.queue.bind();
+        ctx.filters.bind();
+        ctx.zen.bind();
 
         els.closeBtn?.addEventListener('click', ctx.close);
         els.pipBtn?.addEventListener('click', () => togglePictureInPicture(ctx));
@@ -233,6 +279,9 @@
             }
             if (flags.qualityMenuOpen && !e.target.closest('.yt-cinema-quality-container')) {
                 ctx.quality.closeMenu();
+            }
+            if (flags.filtersMenuOpen && !e.target.closest('.yt-cinema-filters-container')) {
+                ctx.filters.closeMenu();
             }
             if (ctx.isDocked) return;
             if (e.target === overlayElement) ctx.close();
@@ -328,6 +377,11 @@
         ctx.transport.clearTimers();
         ctx.history.stop();
         ctx.engagement.dispose();
+        ctx.loop?.dispose?.();
+        ctx.chapters?.dispose?.();
+        ctx.queue?.dispose?.();
+        ctx.filters?.dispose?.();
+        ctx.zen?.dispose?.();
 
         try {
             const { video } = ctx.getPlayerElements();

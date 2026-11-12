@@ -371,6 +371,11 @@
             const open = typeof force === 'boolean' ? force : !isOpen();
             if (open === isOpen()) return;
 
+            if (open) {
+                if (flags.chaptersOpen) ctx.chapters?.togglePanel?.(false);
+                if (flags.queueOpen) ctx.queue?.togglePanel?.(false);
+            }
+
             els.commentsPanel.classList.toggle('yt-cinema-comments-open', open);
             els.commentsPanel.setAttribute('aria-hidden', open ? 'false' : 'true');
             els.commentsBtn?.classList.toggle('active', open);

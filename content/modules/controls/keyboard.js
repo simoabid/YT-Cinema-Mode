@@ -16,8 +16,14 @@
         return active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || Boolean(active.isContentEditable);
     }
 
-    function isCommentsFocused() {
-        return Boolean(document.activeElement?.closest('.yt-cinema-comments-panel'));
+    function isDrawerFocused() {
+        const active = document.activeElement;
+        if (!active || typeof active.closest !== 'function') return false;
+        return Boolean(
+            active.closest('.yt-cinema-comments-panel') ||
+            active.closest('.yt-cinema-chapters-panel') ||
+            active.closest('.yt-cinema-queue-panel')
+        );
     }
 
     function createKeyboardControl(ctx) {
@@ -65,18 +71,31 @@
         function handleKey(event, fromIframe = false) {
             if (!fromIframe && isTypingTarget()) return true;
 
-            if (!fromIframe && isCommentsFocused()) {
+            if (!fromIframe && isDrawerFocused()) {
                 if (event.key === 'Escape') {
                     event.preventDefault();
-                    ctx.engagement?.toggleComments(false);
+                    if (ctx.engagement?.isCommentsOpen?.()) ctx.engagement.toggleComments(false);
+                    else if (ctx.chapters?.isOpen?.()) ctx.chapters.togglePanel(false);
+                    else if (ctx.queue?.isOpen?.()) ctx.queue.togglePanel(false);
                     return true;
                 }
-                if (event.shiftKey && event.key.toLowerCase() === 'c') {
+                const lower = event.key.toLowerCase();
+                if (event.shiftKey && lower === 'c') {
                     event.preventDefault();
                     ctx.engagement?.toggleComments();
                     return true;
                 }
-                // Do not intercept scrolling or navigation keys when navigating comments
+                if (!event.ctrlKey && !event.metaKey && !event.altKey && lower === 'o') {
+                    event.preventDefault();
+                    ctx.chapters?.togglePanel?.();
+                    return true;
+                }
+                if (!event.ctrlKey && !event.metaKey && !event.altKey && lower === 'u') {
+                    event.preventDefault();
+                    ctx.queue?.togglePanel?.();
+                    return true;
+                }
+                // Do not intercept scrolling or navigation keys when navigating drawers
                 return false;
             }
 
@@ -86,7 +105,10 @@
                 event.preventDefault();
                 if (flags.qualityMenuOpen) ctx.quality.closeMenu();
                 else if (flags.speedMenuOpen) ctx.speed.closeMenu();
+                else if (flags.filtersMenuOpen) ctx.filters?.closeMenu?.();
                 else if (ctx.engagement?.isCommentsOpen()) ctx.engagement.toggleComments(false);
+                else if (ctx.chapters?.isOpen?.()) ctx.chapters.togglePanel(false);
+                else if (ctx.queue?.isOpen?.()) ctx.queue.togglePanel(false);
                 else ctx.close();
                 return true;
             }
@@ -182,6 +204,46 @@
                     event.preventDefault();
                     transport.seekBySeconds(JUMP_STEP);
                     return true;
+                case 'b':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.loop?.cycleABLoop?.();
+                    return true;
+                case 'r':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.loop?.toggleRepeatAll?.();
+                    return true;
+                case 'o':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.chapters?.togglePanel?.();
+                    return true;
+                case 'u':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.queue?.togglePanel?.();
+                    return true;
+                case 'v':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.filters?.toggleMenu?.();
+                    return true;
+                case 'z':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.filters?.cycleZoom?.();
+                    return true;
+                case 'x':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.zen?.toggleZen?.();
+                    return true;
+                case 'y':
+                    if (event.ctrlKey || event.metaKey || event.altKey) return false;
+                    event.preventDefault();
+                    ctx.zen?.cycleSleepTimer?.();
+                    return true;
                 default:
                     return false;
             }
@@ -225,6 +287,7 @@
                         if (ctx.isDocked) ctx.dock.bringToFront();
                         if (flags.speedMenuOpen) ctx.speed.closeMenu();
                         if (flags.qualityMenuOpen) ctx.quality.closeMenu();
+                        if (flags.filtersMenuOpen) ctx.filters?.closeMenu?.();
                     });
                     iframeWindow.addEventListener('keydown', (event) => handleKey(event, true), true);
                 }
