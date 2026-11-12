@@ -13,7 +13,7 @@
     const DEFAULT_HOTKEY = ' ';
 
     /** Flavors shipped by styles/00-themes.css; anything else falls back. */
-    const THEMES = ['latte', 'frappe', 'macchiato', 'mocha'];
+    const THEMES = ['latte', 'frappe', 'macchiato', 'mocha', 'oled-crimson', 'nord'];
     const DEFAULT_THEME = 'mocha';
 
     function applyTheme(themeId) {
@@ -146,13 +146,57 @@
         { key: 'altClickTrigger', input: 'altClickTrigger', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
         { key: 'middleClickTrigger', input: 'middleClickTrigger', default: false, read: el => el.checked, write: (el, v) => { el.checked = v; } },
         { key: 'autoTheater', input: 'autoTheater', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
-        { key: 'showIndicator', input: 'showIndicator', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } }
+        { key: 'showIndicator', input: 'showIndicator', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'defaultZenMode', input: 'defaultZenMode', default: false, read: el => el.checked, write: (el, v) => { el.checked = v; } },
+        { key: 'autoAdvanceQueue', input: 'autoAdvanceQueue', default: true, read: el => el.checked, write: (el, v) => { el.checked = v; } }
     ];
+
+    function initTabs() {
+        const tablist = document.querySelector('[role="tablist"]');
+        if (!tablist) return;
+        const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+        const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+        function activateTab(nextTab, moveFocus = false) {
+            if (!nextTab) return;
+            const targetName = nextTab.dataset.tab;
+            for (const tab of tabs) {
+                const selected = tab === nextTab;
+                tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+                tab.setAttribute('tabindex', selected ? '0' : '-1');
+            }
+            for (const panel of panels) {
+                panel.hidden = panel.dataset.panel !== targetName;
+            }
+            if (moveFocus) nextTab.focus();
+        }
+
+        for (const tab of tabs) {
+            tab.addEventListener('click', () => activateTab(tab, false));
+        }
+
+        tablist.addEventListener('keydown', (e) => {
+            const currentIdx = tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
+            if (currentIdx < 0) return;
+
+            let nextIdx = null;
+            if (e.key === 'ArrowRight') nextIdx = (currentIdx + 1) % tabs.length;
+            else if (e.key === 'ArrowLeft') nextIdx = (currentIdx - 1 + tabs.length) % tabs.length;
+            else if (e.key === 'Home') nextIdx = 0;
+            else if (e.key === 'End') nextIdx = tabs.length - 1;
+
+            if (nextIdx !== null) {
+                e.preventDefault();
+                activateTab(tabs[nextIdx], true);
+            }
+        });
+    }
 
     // ------------------------------------------------------------------- UI
 
     document.addEventListener('DOMContentLoaded', () => {
         applyVersion();
+        initTabs();
         const ui = createUi();
 
         ui.load();

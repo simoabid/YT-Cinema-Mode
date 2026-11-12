@@ -14,221 +14,300 @@
                 <img src="../icons/icon32.png" alt="Cinema Mode" width="22" height="22">
                 <span>Cinema Mode</span>
             </div>
-            <div class="version" id="popupVersion">v1.3.0</div>
+            <div class="version" id="popupVersion">v2.0.0</div>
         </header>
 
+        <div class="popup-tabs" role="tablist" aria-label="Cinema Mode Settings">
+            <button type="button" role="tab" class="popup-tab" id="tab-general" aria-selected="true" aria-controls="panel-general" data-tab="general" tabindex="0">General</button>
+            <button type="button" role="tab" class="popup-tab" id="tab-visuals" aria-selected="false" aria-controls="panel-visuals" data-tab="visuals" tabindex="-1">Visuals</button>
+            <button type="button" role="tab" class="popup-tab" id="tab-playback" aria-selected="false" aria-controls="panel-playback" data-tab="playback" tabindex="-1">Playback</button>
+            <button type="button" role="tab" class="popup-tab" id="tab-shortcuts" aria-selected="false" aria-controls="panel-shortcuts" data-tab="shortcuts" tabindex="-1">Shortcuts</button>
+        </div>
+
         <main class="popup-content">
-            <section class="section">
-                <h3>How to Use</h3>
-                <div class="instruction">
-                    <div class="step">
-                        <span class="step-num">1</span>
-                        <span>Hover over any YouTube video thumbnail</span>
-                    </div>
-                    <div class="step">
-                        <span class="step-num">2</span>
-                        <span>Press <kbd class="hotkey-kbd">Space</kbd> to open cinema mode</span>
-                    </div>
-                    <div class="step">
-                        <span class="step-num">3</span>
-                        <span>Press <kbd>ESC</kbd> to close</span>
-                    </div>
-                </div>
-            </section>
+            <div role="tabpanel" class="popup-tabpanel" id="panel-general" aria-labelledby="tab-general" data-panel="general">
+                <div class="popup-tabpanel-inner">
+                    <section class="section">
+                        <h3>How to Use</h3>
+                        <div class="instruction">
+                            <div class="step">
+                                <span class="step-num">1</span>
+                                <span>Hover over any YouTube video thumbnail</span>
+                            </div>
+                            <div class="step">
+                                <span class="step-num">2</span>
+                                <span>Press <kbd class="hotkey-kbd">Space</kbd> to open cinema mode (or <kbd>Alt+Q</kbd> to queue)</span>
+                            </div>
+                            <div class="step">
+                                <span class="step-num">3</span>
+                                <span>Press <kbd>ESC</kbd> to close</span>
+                            </div>
+                        </div>
+                    </section>
 
-            <section class="section">
-                <h3>Settings</h3>
+                    <section class="section">
+                        <h3>Triggers &amp; Launch</h3>
 
-                <div class="setting-item">
-                    <label for="theme">Theme</label>
-                    <select id="theme">
-                        <option value="mocha">Catppuccin Mocha</option>
-                        <option value="macchiato">Catppuccin Macchiato</option>
-                        <option value="frappe">Catppuccin Frappé</option>
-                        <option value="latte">Catppuccin Latte</option>
-                    </select>
-                </div>
-                
-                <div class="setting-item">
-                    <label for="hotkeyRecorder">Cinema Hotkey</label>
-                    <button type="button" id="hotkeyRecorder" class="hotkey-recorder-btn" title="Click to record a new hotkey">
-                        <span id="hotkeyRecorderText">Space</span>
-                        <span class="hotkey-record-hint">Click to change</span>
-                    </button>
-                </div>
+                        <div class="setting-item">
+                            <label for="hotkeyRecorder">Cinema Hotkey</label>
+                            <button type="button" id="hotkeyRecorder" class="hotkey-recorder-btn" title="Click to record a new hotkey">
+                                <span id="hotkeyRecorderText">Space</span>
+                                <span class="hotkey-record-hint">Click to change</span>
+                            </button>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="backdropStyle">Backdrop Style</label>
-                    <select id="backdropStyle">
-                        <option value="glass">Frosted Glass</option>
-                        <option value="oled">OLED Blackout</option>
-                    </select>
-                </div>
+                        <div class="setting-item">
+                            <label for="directMiniPlayer">Direct Mini-Player (Ctrl + <span class="hotkey-kbd">Space</span>)</label>
+                            <input type="checkbox" id="directMiniPlayer">
+                        </div>
 
-                <div class="setting-item setting-slider-item" id="opacitySettingItem">
-                    <div class="setting-slider-header">
-                        <label for="overlayOpacity">Backdrop Opacity</label>
-                        <span class="slider-value" id="opacityValue">90%</span>
-                    </div>
-                    <input type="range" id="overlayOpacity" min="50" max="100" value="90" step="5">
-                </div>
+                        <div class="setting-item">
+                            <label for="directPiP">Direct Picture-in-Picture (Hover + <span class="hotkey-kbd">Space</span>)</label>
+                            <input type="checkbox" id="directPiP">
+                        </div>
 
-                <div class="setting-item">
-                    <label for="ambientLighting">Ambient Lighting</label>
-                    <input type="checkbox" id="ambientLighting" checked>
-                </div>
+                        <div class="setting-item">
+                            <label for="altClickTrigger">Alt + Click Thumbnail</label>
+                            <input type="checkbox" id="altClickTrigger" checked>
+                        </div>
 
-                <div class="setting-item" id="ambientFullScreenItem">
-                    <label for="ambientFullScreen">Full Screen Glow</label>
-                    <input type="checkbox" id="ambientFullScreen" checked>
-                </div>
+                        <div class="setting-item">
+                            <label for="middleClickTrigger">Middle-Click Thumbnail</label>
+                            <input type="checkbox" id="middleClickTrigger">
+                        </div>
 
-                <div class="setting-item" id="ambientQualityItem">
-                    <label for="ambientQuality">Ambient Glow Quality</label>
-                    <select id="ambientQuality">
-                        <option value="high">High (Original 80px Blur)</option>
-                        <option value="medium">Balanced (40px Blur)</option>
-                        <option value="low">Performance (No Blur)</option>
-                        <option value="custom">Custom Blur Radius</option>
-                    </select>
+                        <div class="setting-item">
+                            <label for="showIndicator">Show Hover Indicator</label>
+                            <input type="checkbox" id="showIndicator" checked>
+                        </div>
+                    </section>
                 </div>
+            </div>
 
-                <div class="setting-item setting-slider-item" id="ambientBlurItem">
-                    <div class="setting-slider-header">
-                        <label for="ambientBlur">Glow Blur Radius</label>
-                        <span class="slider-value" id="ambientBlurValue">80px</span>
-                    </div>
-                    <input type="range" id="ambientBlur" min="0" max="120" value="80" step="5">
-                </div>
+            <div role="tabpanel" class="popup-tabpanel" id="panel-visuals" aria-labelledby="tab-visuals" data-panel="visuals" hidden>
+                <div class="popup-tabpanel-inner">
+                    <section class="section">
+                        <h3>Theme &amp; Backdrop</h3>
 
-                <div class="setting-item setting-slider-item" id="ambientGlowItem">
-                    <div class="setting-slider-header">
-                        <label for="ambientGlow">Glow Effect / Intensity</label>
-                        <span class="slider-value" id="ambientGlowValue">75%</span>
-                    </div>
-                    <input type="range" id="ambientGlow" min="20" max="100" value="75" step="5">
-                </div>
+                        <div class="setting-item">
+                            <label for="theme">Theme</label>
+                            <select id="theme">
+                                <option value="mocha">Catppuccin Mocha</option>
+                                <option value="macchiato">Catppuccin Macchiato</option>
+                                <option value="frappe">Catppuccin Frappé</option>
+                                <option value="latte">Catppuccin Latte</option>
+                                <option value="oled-crimson">OLED Crimson</option>
+                                <option value="nord">Nord Arctic</option>
+                            </select>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="autoPause">Auto-Pause Background</label>
-                    <input type="checkbox" id="autoPause" checked>
-                </div>
+                        <div class="setting-item">
+                            <label for="backdropStyle">Backdrop Style</label>
+                            <select id="backdropStyle">
+                                <option value="glass">Frosted Glass</option>
+                                <option value="oled">OLED Blackout</option>
+                            </select>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="autoHideControls">Auto-Hide Controls (0.5s)</label>
-                    <input type="checkbox" id="autoHideControls" checked>
-                </div>
+                        <div class="setting-item setting-slider-item" id="opacitySettingItem">
+                            <div class="setting-slider-header">
+                                <label for="overlayOpacity">Backdrop Opacity</label>
+                                <span class="slider-value" id="opacityValue">90%</span>
+                            </div>
+                            <input type="range" id="overlayOpacity" min="50" max="100" value="90" step="5">
+                        </div>
+                    </section>
 
-                <div class="setting-item">
-                    <label for="rememberSpeed">Remember Playback Speed</label>
-                    <input type="checkbox" id="rememberSpeed" checked>
-                </div>
+                    <section class="section">
+                        <h3>Ambient Lighting</h3>
 
-                <div class="setting-item">
-                    <label for="rememberQuality">Remember Video Quality</label>
-                    <input type="checkbox" id="rememberQuality" checked>
-                </div>
+                        <div class="setting-item">
+                            <label for="ambientLighting">Ambient Lighting</label>
+                            <input type="checkbox" id="ambientLighting" checked>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="directMiniPlayer">Direct Mini-Player (Ctrl + <span class="hotkey-kbd">Space</span>)</label>
-                    <input type="checkbox" id="directMiniPlayer">
-                </div>
+                        <div class="setting-item" id="ambientFullScreenItem">
+                            <label for="ambientFullScreen">Full Screen Glow</label>
+                            <input type="checkbox" id="ambientFullScreen" checked>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="directPiP">Direct Picture-in-Picture (Hover + <span class="hotkey-kbd">Space</span>)</label>
-                    <input type="checkbox" id="directPiP">
-                </div>
+                        <div class="setting-item" id="ambientQualityItem">
+                            <label for="ambientQuality">Ambient Glow Quality</label>
+                            <select id="ambientQuality">
+                                <option value="high">High (Original 80px Blur)</option>
+                                <option value="medium">Balanced (40px Blur)</option>
+                                <option value="low">Performance (No Blur)</option>
+                                <option value="custom">Custom Blur Radius</option>
+                            </select>
+                        </div>
 
-                <div class="setting-item">
-                    <label for="altClickTrigger">Alt + Click Thumbnail</label>
-                    <input type="checkbox" id="altClickTrigger" checked>
-                </div>
+                        <div class="setting-item setting-slider-item" id="ambientBlurItem">
+                            <div class="setting-slider-header">
+                                <label for="ambientBlur">Glow Blur Radius</label>
+                                <span class="slider-value" id="ambientBlurValue">80px</span>
+                            </div>
+                            <input type="range" id="ambientBlur" min="0" max="120" value="80" step="5">
+                        </div>
 
-                <div class="setting-item">
-                    <label for="middleClickTrigger">Middle-Click Thumbnail</label>
-                    <input type="checkbox" id="middleClickTrigger">
+                        <div class="setting-item setting-slider-item" id="ambientGlowItem">
+                            <div class="setting-slider-header">
+                                <label for="ambientGlow">Glow Effect / Intensity</label>
+                                <span class="slider-value" id="ambientGlowValue">75%</span>
+                            </div>
+                            <input type="range" id="ambientGlow" min="20" max="100" value="75" step="5">
+                        </div>
+                    </section>
                 </div>
+            </div>
 
-                <div class="setting-item">
-                    <label for="autoTheater">Auto Theater Mode (fallback player)</label>
-                    <input type="checkbox" id="autoTheater" checked>
-                </div>
+            <div role="tabpanel" class="popup-tabpanel" id="panel-playback" aria-labelledby="tab-playback" data-panel="playback" hidden>
+                <div class="popup-tabpanel-inner">
+                    <section class="section">
+                        <h3>Playback &amp; Experience</h3>
 
-                <div class="setting-item">
-                    <label for="showIndicator">Show Hover Indicator</label>
-                    <input type="checkbox" id="showIndicator" checked>
-                </div>
-            </section>
+                        <div class="setting-item">
+                            <label for="autoPause">Auto-Pause Background</label>
+                            <input type="checkbox" id="autoPause" checked>
+                        </div>
 
-            <section class="section shortcuts">
-                <h3>Keyboard Shortcuts</h3>
-                <div class="shortcut-list">
-                    <div class="shortcut">
-                        <kbd class="hotkey-kbd">Space</kbd>
-                        <span>Open cinema mode</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>Ctrl+<span class="hotkey-kbd">Space</span></kbd>
-                        <span>Open Mini-Player directly</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>Alt+Click</kbd>
-                        <span>Quick open video</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>ESC</kbd>
-                        <span>Close overlay</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>S</kbd>
-                        <span>Take screenshot</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>Shift+S</kbd>
-                        <span>Copy frame</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>[</kbd> <kbd>]</kbd>
-                        <span>Adjust speed</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>Q</kbd>
-                        <span>Quality menu</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>D</kbd>
-                        <span>Toggle Mini-Player</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>↑</kbd> <kbd>↓</kbd>
-                        <span>Volume up / down</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>M</kbd>
-                        <span>Mute / Unmute</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>P</kbd>
-                        <span>Previous video</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>N</kbd>
-                        <span>Next video</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>F</kbd>
-                        <span>Toggle fullscreen</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>T</kbd>
-                        <span>Toggle theater</span>
-                    </div>
-                    <div class="shortcut">
-                        <kbd>Alt+H</kbd>
-                        <span>Global toggle</span>
-                    </div>
+                        <div class="setting-item">
+                            <label for="autoHideControls">Auto-Hide Controls (0.5s)</label>
+                            <input type="checkbox" id="autoHideControls" checked>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="rememberSpeed">Remember Playback Speed</label>
+                            <input type="checkbox" id="rememberSpeed" checked>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="rememberQuality">Remember Video Quality</label>
+                            <input type="checkbox" id="rememberQuality" checked>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="autoAdvanceQueue">Auto-Play Watch Queue</label>
+                            <input type="checkbox" id="autoAdvanceQueue" checked>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="defaultZenMode">Start in Zen Focus Mode</label>
+                            <input type="checkbox" id="defaultZenMode">
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="autoTheater">Auto Theater Mode (fallback player)</label>
+                            <input type="checkbox" id="autoTheater" checked>
+                        </div>
+                    </section>
                 </div>
-            </section>
+            </div>
+
+            <div role="tabpanel" class="popup-tabpanel" id="panel-shortcuts" aria-labelledby="tab-shortcuts" data-panel="shortcuts" hidden>
+                <div class="popup-tabpanel-inner">
+                    <section class="section shortcuts">
+                        <h3>Keyboard Shortcuts</h3>
+                        <div class="shortcut-list">
+                            <div class="shortcut">
+                                <kbd class="hotkey-kbd">Space</kbd>
+                                <span>Open cinema</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Alt+Q</kbd>
+                                <span>Add to queue</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Ctrl+<span class="hotkey-kbd">Space</span></kbd>
+                                <span>Direct mini-player</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Alt+Click</kbd>
+                                <span>Quick open</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>B</kbd>
+                                <span>A-B loop cycle</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>R</kbd>
+                                <span>Repeat video</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>O</kbd>
+                                <span>Chapters drawer</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>U</kbd>
+                                <span>Queue drawer</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>V</kbd>
+                                <span>Visual filters</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Z</kbd>
+                                <span>Ultrawide zoom</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>X</kbd>
+                                <span>Zen focus mode</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Y</kbd>
+                                <span>Sleep timer</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Shift+C</kbd>
+                                <span>Comments drawer</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Q</kbd>
+                                <span>Quality menu</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>[</kbd> <kbd>]</kbd>
+                                <span>Adjust speed</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>S</kbd>
+                                <span>Screenshot</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>Shift+S</kbd>
+                                <span>Copy frame</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>D</kbd>
+                                <span>Mini-player</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>↑</kbd> <kbd>↓</kbd>
+                                <span>Volume up/down</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>M</kbd>
+                                <span>Mute / Unmute</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>P</kbd> <kbd>N</kbd>
+                                <span>Prev / Next</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>F</kbd>
+                                <span>Fullscreen</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>T</kbd>
+                                <span>Theater mode</span>
+                            </div>
+                            <div class="shortcut">
+                                <kbd>ESC</kbd>
+                                <span>Close active UI</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
         </main>
 
         <footer class="popup-footer">
